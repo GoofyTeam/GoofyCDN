@@ -1,100 +1,47 @@
-# Welcome to React Router!
+# [STARTER PACK] Front - Vite + Tailwind + TanStack Router
 
-A modern, production-ready template for building full-stack React applications using React Router.
+This repo use :
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+- React 19.0.0
+- Tailwind 4.0.3
+- TanStack Router 1.99.6
 
-## Features
-
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
-
-## Getting Started
-
-### Installation
-
-Install the dependencies:
-
-```bash
+```
+cd Starter-Pack
 npm install
 ```
 
-### Development
+## For TanStack DevTools :
 
-Start the development server with HMR:
+It's activated in Index.tsx, you can remove it if you want.
+In Page2 it doesn't appear, copy/paste the file route if you want to disable DevTools.
 
-```bash
-npm run dev
-```
+For CSS, it's centered by default, can be removed in index.css (body)
 
-Your application will be available at `http://localhost:5173`.
+## How to use TanStack Router :
 
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-This template includes three Dockerfiles optimized for different package managers:
-
-- `Dockerfile` - for npm
-- `Dockerfile.pnpm` - for pnpm
-- `Dockerfile.bun` - for bun
-
-To build and run using Docker:
-
-```bash
-# For npm
-docker build -t my-app .
-
-# For pnpm
-docker build -f Dockerfile.pnpm -t my-app .
-
-# For bun
-docker build -f Dockerfile.bun -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
+Create a **tsx** file in folder **route**, then copy/paste this code and replace **Page**, **YourPage** and **YourUrl** by your page and url :
 
 ```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
+import Page from "@/pages/YourPage";
+import { createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/YourUrl")({
+  component: Page,
+});
 ```
 
-## Styling
+## How to install Shadcn UI Component :
 
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+```
+cd Starter-Pack
+npx shadcn@latest add [name of component]
+```
 
----
+List of components can be find [here](https://ui.shadcn.com/docs/components/accordion).
 
-Built with ❤️ using React Router.
+Also compatible with other libraries.
+
+Lucide Icons already installed.
+
+The component will be in the folder components/ui
