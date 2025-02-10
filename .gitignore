@@ -1,2 +1,16 @@
 .idea/
 .windsurfrules
+
+# Temporary files
+**/**/tmp
+tmp/
+*.log
+air.log
+
+# Binary files
+**/main
+**/app
+
+# Environment variables
+.env
+.env.localgit 
