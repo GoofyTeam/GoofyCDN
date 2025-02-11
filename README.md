@@ -121,3 +121,96 @@ Le fichier `main.go` orchestre tous ces composants :
 3. Committez vos changements (`git commit -m 'Add amazing feature'`)
 4. Push vers la branche (`git push origin feature/amazing-feature`)
 5. Ouvrez une Pull Request
+
+## 🚀 Déploiement sur AWS EKS
+
+### Prérequis AWS
+- Un compte AWS avec les droits nécessaires
+- AWS CLI configuré
+- `eksctl` installé
+- `kubectl` installé
+
+### 1. Construction de l'Image Docker
+```bash
+# Construction de l'image
+docker build -t misterzapp/goofy-cdn:latest -f docker/cdn/Dockerfile .
+
+# Push vers Docker Hub
+docker push misterzapp/goofy-cdn:latest
+```
+
+### 2. Déploiement sur EKS
+
+#### Création du Cluster
+```bash
+# Création du cluster EKS
+eksctl create cluster \
+  --name goofy-cdn-cluster \
+  --region eu-west-3 \
+  --nodegroup-name goofy-cdn-workers \
+  --node-type t3.small \
+  --nodes 2 \
+  --nodes-min 1 \
+  --nodes-max 3
+```
+
+#### Déploiement de l'Application
+```bash
+# Déployer l'application
+kubectl apply -f k8s/cdn-deployment.yaml
+kubectl apply -f k8s/cdn-service.yaml
+
+# Vérifier le déploiement
+kubectl get pods
+kubectl get services
+```
+
+### 3. Gestion des Ressources
+
+#### Vérification des Ressources
+```bash
+# Lister les nœuds
+kubectl get nodes
+
+# Lister les pods
+kubectl get pods --all-namespaces
+
+# Voir les logs
+kubectl logs -l app=goofy-cdn
+```
+
+#### Nettoyage des Ressources
+```bash
+# Supprimer le nodegroup
+eksctl delete nodegroup --cluster goofy-cdn-cluster --name goofy-cdn-workers
+
+# Supprimer le cluster complet (arrête toute facturation)
+eksctl delete cluster --name goofy-cdn-cluster
+```
+
+### 4. Coûts AWS à Surveiller
+- Cluster EKS : ~$0.10 par heure
+- Nœuds EC2 (t3.small) : ~$0.023 par heure par nœud
+- Load Balancer : ~$0.025 par heure
+- Volumes EBS et ENI : coûts variables selon l'utilisation
+
+⚠️ **Important** : Pensez à supprimer toutes les ressources après utilisation pour éviter des coûts inutiles.
+
+### 5. Troubleshooting Courant
+
+#### Problèmes de CNI ( a voir car problème pour l'instant)
+Si les pods restent en état "ContainerCreating" :
+```bash
+# Réinstaller le CNI Amazon VPC
+kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/v1.12.6/config/master/aws-k8s-cni.yaml
+
+# Redémarrer les pods CNI
+kubectl delete pods -n kube-system -l k8s-app=aws-node
+```
+
+#### Problèmes de Permissions
+Vérifier que le rôle IAM a les bonnes politiques :
+- AmazonEKSClusterPolicy
+- AmazonEKSServicePolicy
+- AmazonEKSVPCResourceController
+- AmazonEKS_CNI_Policy

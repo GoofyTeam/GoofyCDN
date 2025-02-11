@@ -5,14 +5,15 @@ import (
 	"app/internal/loadbalancer"
 	"app/internal/middleware"
 	"context"
-	"fmt"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/time/rate"
 )
 
 // main est la fonction principale qui initialise et démarre le serveur CDN
@@ -38,66 +39,67 @@ func main() {
 	// avec deux backends de même poids
 	backends := []string{"http://backend1:8080", "http://backend2:8080"}
 	weights := []int{1, 1}
-	lb := loadbalancer.NewWeightedRoundRobin(backends, weights)
+	lb := loadbalancer.NewWeightedRoundRobin(backends, weights, loadbalancer.Config{
+		HealthCheckInterval: time.Second,
+		HealthCheckTimeout:  time.Second,
+		MaxFailCount:       3,
+		RetryTimeout:       time.Second,
+	})
+
+	// Configuration du Rate Limiter (100 requêtes par minute par IP)
+	rateLimiter := middleware.NewRateLimiter(rate.Limit(100/60.0), 100)
 
 	// Configuration du routeur HTTP
 	mux := http.NewServeMux()
 	
-	// Route principale qui gère le load balancing et le cache
-	// Pour chaque requête :
-	// 1. Vérifie si la réponse est en cache
-	// 2. Si non, proxie la requête vers un backend
-	// 3. Met en cache la réponse
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		backend := lb.NextBackend()
-		
-		// Tentative de récupération depuis le cache
-		if data, found := memCache.Get(r.URL.Path); found {
-			fmt.Fprint(w, data)
+	// Endpoint de monitoring
+	mux.Handle("/metrics", promhttp.Handler())
+
+	// Route principale avec middleware de sécurité
+	mainHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Vérification du cache
+		if cachedResponse, found, err := memCache.Get(r.Context(), r.URL.Path); err == nil && found {
+			w.Write(cachedResponse.Value.([]byte))
+			return
+		}
+
+		// Sélection du backend
+		backend, err := lb.NextBackend(r.Context())
+		if err != nil {
+			http.Error(w, "No backend available", http.StatusServiceUnavailable)
 			return
 		}
 		
-		// Proxy vers le backend sélectionné
+		// Proxy de la requête
 		resp, err := http.Get(backend.URL + r.URL.Path)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadGateway)
+			http.Error(w, "Backend error", http.StatusBadGateway)
 			return
 		}
 		defer resp.Body.Close()
-		
-		// Mise en cache de la réponse pour les futures requêtes
-		memCache.Set(r.URL.Path, "cached response")
-		
-		fmt.Fprintf(w, "Proxied to %s", backend.URL)
+
+		// Mise en cache de la réponse
+		// TODO: Implémenter la lecture du corps de la réponse et la mise en cache
 	})
 
-	// Exposition des métriques Prometheus pour le monitoring
-	mux.Handle("/metrics", promhttp.Handler())
+	// Application des middlewares
+	handler := middleware.SecurityHeaders(rateLimiter.RateLimit(mainHandler))
+	mux.Handle("/", handler)
 
-	// Application des middlewares dans l'ordre :
-	// 1. Sécurité (headers HTTPS, CORS, etc.)
-	// 2. Métriques (compteurs Prometheus)
-	// 3. Rate Limiting (100 req/s avec burst de 10)
-	handler := middleware.Security(
-		middleware.Metrics(
-			middleware.RateLimit(100, 10)(mux),
-		),
-	)
-
-	// Configuration du serveur HTTP avec timeouts
+	// Configuration du serveur
 	srv := &http.Server{
-		Addr:           ":8080",
-		Handler:        handler,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20, // 1 MB
+		Addr:         ":8080",
+		Handler:      mux,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 
-	// Démarrage du serveur dans une goroutine séparée
+	// Démarrage du serveur en arrière-plan
 	go func() {
 		log.Info("Starting server on :8080")
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal(err)
+		if err := srv.ListenAndServeTLS("cert.pem", "key.pem"); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server failed: %v", err)
 		}
 	}()
 
@@ -107,14 +109,13 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	// Arrêt du serveur avec timeout de 30 secondes
 	log.Info("Shutting down server...")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown:", err)
+		log.Fatalf("Server forced to shutdown: %v", err)
 	}
 
-	log.Info("Server successfully shutdown")
+	log.Info("Server stopped gracefully")
 }

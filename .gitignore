@@ -9,8 +9,7 @@ air.log
 
 # Binary files
 **/main
-**/app
 
 # Environment variables
 .env
-.env.localgit 
+.env.localgit
