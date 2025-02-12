@@ -39,6 +39,9 @@ type Cache interface {
 
 	// GetMetrics retourne les métriques du cache
 	GetMetrics() *CacheMetrics
+
+	// Clear vide complètement le cache
+	Clear()
 }
 
 // MemoryCache implémente un cache en mémoire utilisant l'algorithme LRU
@@ -115,6 +118,12 @@ func (m *MemoryCache) GetMetrics() *CacheMetrics {
 		Misses: atomic.LoadUint64(&m.metrics.Misses),
 		Items:  atomic.LoadUint64(&m.metrics.Items),
 	}
+}
+
+// Clear vide complètement le cache mémoire
+func (m *MemoryCache) Clear() {
+	m.lru.Purge()
+	atomic.StoreUint64(&m.metrics.Items, 0)
 }
 
 // RedisCache implémente un cache distribué utilisant Redis
@@ -202,4 +211,10 @@ func (r *RedisCache) GetMetrics() *CacheMetrics {
 		Misses: atomic.LoadUint64(&r.metrics.Misses),
 		Items:  atomic.LoadUint64(&r.metrics.Items),
 	}
+}
+
+// Clear vide complètement le cache Redis
+func (r *RedisCache) Clear() {
+	r.client.FlushDB(context.Background())
+	atomic.StoreUint64(&r.metrics.Items, 0)
 }

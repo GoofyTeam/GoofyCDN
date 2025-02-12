@@ -7,6 +7,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Backend représente un serveur backend avec ses propriétés
@@ -40,6 +42,9 @@ type LoadBalancer interface {
 	
 	// GetMetrics retourne les métriques du load balancer
 	GetMetrics() *LoadBalancerMetrics
+
+	// Close nettoie les ressources du load balancer
+	Close() error
 }
 
 // Configuration commune pour tous les load balancers
@@ -96,9 +101,59 @@ func NewRoundRobin(urls []string, config Config) *RoundRobin {
 
 func (r *RoundRobin) healthCheckLoop() {
 	ticker := time.NewTicker(r.config.HealthCheckInterval)
+	defer ticker.Stop()
+
 	for range ticker.C {
-		r.HealthCheck(context.Background())
+		// logrus.Info("Démarrage de la vérification de santé des backends")
+		if err := r.HealthCheck(context.Background()); err != nil {
+			logrus.WithError(err).Error("Erreur lors de la vérification de santé")
+		}
 	}
+}
+
+func (r *RoundRobin) checkBackendHealth(ctx context.Context, backend *Backend) {
+	backend.mu.Lock()
+	defer backend.mu.Unlock()
+
+	logrus.WithFields(logrus.Fields{
+		"backend_url": backend.URL,
+		"timestamp":   time.Now().Format(time.RFC3339),
+	}).Debug("Vérification de la santé du backend")
+
+	req, err := http.NewRequestWithContext(ctx, "GET", backend.URL+"/health", nil)
+	if err != nil {
+		logrus.WithError(err).WithField("backend_url", backend.URL).Error("Erreur lors de la création de la requête health check")
+		backend.IsAlive = false
+		backend.FailCount++
+		return
+	}
+
+	resp, err := r.client.Do(req)
+	if err != nil {
+		logrus.WithError(err).WithField("backend_url", backend.URL).Error("Échec du health check")
+		backend.IsAlive = false
+		backend.FailCount++
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		logrus.WithFields(logrus.Fields{
+			"backend_url": backend.URL,
+			"status":      resp.StatusCode,
+		}).Debug("Backend en bonne santé")
+		backend.IsAlive = true
+		backend.FailCount = 0
+	} else {
+		logrus.WithFields(logrus.Fields{
+			"backend_url": backend.URL,
+			"status":      resp.StatusCode,
+		}).Warn("Backend en mauvaise santé")
+		backend.IsAlive = false
+		backend.FailCount++
+	}
+
+	backend.LastCheck = time.Now()
 }
 
 func (r *RoundRobin) HealthCheck(ctx context.Context) error {
@@ -112,53 +167,6 @@ func (r *RoundRobin) HealthCheck(ctx context.Context) error {
 	}
 	wg.Wait()
 	return nil
-}
-
-func (r *RoundRobin) checkBackendHealth(ctx context.Context, backend *Backend) {
-	backend.mu.Lock()
-	defer backend.mu.Unlock()
-
-	wasAlive := backend.IsAlive // Sauvegarde de l'état précédent
-
-	req, err := http.NewRequestWithContext(ctx, "GET", backend.URL+"/health", nil)
-	if err != nil {
-		backend.FailCount++
-		if backend.FailCount >= r.config.MaxFailCount && backend.IsAlive {
-			backend.IsAlive = false
-			atomic.AddInt32(&r.metrics.ActiveBackends, -1)
-		}
-		return
-	}
-
-	start := time.Now()
-	resp, err := r.client.Do(req)
-	latency := time.Since(start)
-
-	if err != nil || resp.StatusCode != http.StatusOK {
-		backend.FailCount++
-		if backend.FailCount >= r.config.MaxFailCount && backend.IsAlive {
-			backend.IsAlive = false
-			atomic.AddInt32(&r.metrics.ActiveBackends, -1)
-		}
-		return
-	}
-
-	if resp != nil {
-		resp.Body.Close()
-	}
-
-	backend.FailCount = 0
-	if !wasAlive {
-		backend.IsAlive = true
-		atomic.AddInt32(&r.metrics.ActiveBackends, 1)
-	}
-
-	backend.LastCheck = time.Now()
-
-	// Mise à jour de la latence moyenne
-	r.mu.Lock()
-	r.metrics.AverageLatency = (r.metrics.AverageLatency + float64(latency.Milliseconds())) / 2
-	r.mu.Unlock()
 }
 
 func (r *RoundRobin) NextBackend(ctx context.Context) (*Backend, error) {
@@ -213,6 +221,25 @@ func (r *RoundRobin) GetMetrics() *LoadBalancerMetrics {
 	return metrics
 }
 
+func (r *RoundRobin) Close() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	
+	// Arrêter les vérifications de santé et nettoyer les ressources
+	if r.client != nil {
+		r.client.CloseIdleConnections()
+	}
+	
+	// Réinitialiser les backends
+	for _, backend := range r.backends {
+		backend.IsAlive = false
+		backend.CurrentWeight = 0
+		backend.Connections = 0
+	}
+	
+	return nil
+}
+
 // WeightedRoundRobin hérite des fonctionnalités de base de RoundRobin
 type WeightedRoundRobin struct {
 	*RoundRobin
@@ -265,6 +292,10 @@ func (w *WeightedRoundRobin) NextBackend(ctx context.Context) (*Backend, error) 
 	return best, nil
 }
 
+func (w *WeightedRoundRobin) Close() error {
+	return w.RoundRobin.Close()
+}
+
 // LeastConnections hérite également des fonctionnalités de base
 type LeastConnections struct {
 	*RoundRobin
@@ -310,4 +341,8 @@ func (l *LeastConnections) NextBackend(ctx context.Context) (*Backend, error) {
 	}
 	atomic.AddUint64(l.metrics.RequestsPerBackend[best.URL], 1)
 	return best, nil
+}
+
+func (l *LeastConnections) Close() error {
+	return l.RoundRobin.Close()
 }

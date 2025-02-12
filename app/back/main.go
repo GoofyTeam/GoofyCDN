@@ -53,9 +53,12 @@ func main() {
 	authHandler := handlers.NewAuthHandler(db)
 	fileHandler := handlers.NewFileHandler(db, uploadDir)
 	folderHandler := handlers.NewFolderHandler(db)
+	healthHandler := handlers.NewHealthHandler()
 
 	// Configuration de Gin
 	r := gin.Default()
+
+	r.GET("/health", healthHandler.Health)
 
 	// Routes publiques
 	r.POST("/register", authHandler.Register)
@@ -79,10 +82,11 @@ func main() {
 	// Démarrage du serveur
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8082"
+		port = "8080"
 	}
 
-	if err := r.Run(":" + port); err != nil {
+	log.Printf("Serveur démarré sur le port %s", port)
+	if err := r.Run("0.0.0.0:" + port); err != nil {
 		log.Fatal(err)
 	}
 }

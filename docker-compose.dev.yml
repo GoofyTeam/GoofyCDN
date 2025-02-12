@@ -7,6 +7,11 @@ services:
       - "8080:8080"
     volumes:
       - ./app/CDN:/app
+    networks:
+      - goofy-network
+    depends_on:
+      - backend
+
   backend:
     build:
       context: .
