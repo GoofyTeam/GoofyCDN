@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"app/internal/metrics"
 	"github.com/sirupsen/logrus"
 )
 
@@ -166,6 +167,18 @@ func (r *RoundRobin) HealthCheck(ctx context.Context) error {
 		}(backend)
 	}
 	wg.Wait()
+
+	activeCount := int32(0)
+	for _, backend := range r.backends {
+		backend.mu.RLock()
+		if backend.IsAlive {
+			activeCount++
+		}
+		backend.mu.RUnlock()
+	}
+	atomic.StoreInt32(&r.metrics.ActiveBackends, activeCount)
+	metrics.UpdateActiveBackends(activeCount)
+	
 	return nil
 }
 

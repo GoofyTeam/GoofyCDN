@@ -3,7 +3,8 @@ package main
 import (
 	"app/internal/cache"
 	"app/internal/loadbalancer"
-	"app/internal/middleware"
+	"app/internal/metrics"
+	"app/internal/middleware" // Ajout de l'import du package api
 	"context"
 	"fmt"
 	"io"
@@ -24,39 +25,12 @@ var log = logrus.New()
 func init() {
 	// Configuration de logrus
 	log.SetFormatter(&logrus.JSONFormatter{
-		TimestampFormat: "2006-01-02 15:04:05",
-		PrettyPrint:    true,
+		TimestampFormat: time.RFC3339,
 	})
-
-	// Créer le dossier logs s'il n'existe pas
-	if err := os.MkdirAll("logs", 0755); err != nil {
-		log.Fatal("Impossible de créer le dossier logs:", err)
-	}
-
-	// Ouvrir le fichier de log
-	logFile := fmt.Sprintf("logs/cdn_%s.log", time.Now().Format("2006-01-02"))
-	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatal("Impossible d'ouvrir le fichier de log:", err)
-	}
-
-	// Configuration de la sortie multiple (console + fichier)
-	mw := io.MultiWriter(os.Stdout, file)
-	log.SetOutput(mw)
-
-	// Niveau de log
+	log.SetOutput(os.Stdout)
 	log.SetLevel(logrus.InfoLevel)
-
-	log.Info("Démarrage du système de logging")
 }
 
-// main est la fonction principale qui initialise et démarre le serveur CDN
-// Elle configure :
-// - Le système de logging
-// - Le cache en mémoire
-// - Le load balancer
-// - Les middlewares de sécurité et de monitoring
-// - La gestion gracieuse de l'arrêt du serveur
 func main() {
 	// Configuration du cache avec une taille maximale de 1000 entrées
 	memCache, err := cache.NewMemoryCache(1000)
@@ -66,8 +40,8 @@ func main() {
 
 	// Configuration du Load Balancer en mode Weighted Round Robin
 	// avec deux backends de même poids
-	backends := []string{"http://backend:8080"}
-	weights := []int{1}
+	backends := []string{"http://backend:8080","http://backend:8080","http://backend:8080","http://backend:8080","http://backend:8080"}
+	weights := []int{1,1,1,1,1}
 	lb := loadbalancer.NewWeightedRoundRobin(backends, weights, loadbalancer.Config{
 		HealthCheckInterval: time.Second,
 		HealthCheckTimeout:  time.Second,
@@ -80,7 +54,7 @@ func main() {
 
 	// Configuration du routeur HTTP
 	mux := http.NewServeMux()
-	
+
 	// Endpoint de monitoring
 	mux.Handle("/metrics", promhttp.Handler())
 
@@ -109,9 +83,10 @@ func main() {
 
 	// Route principale avec middleware de sécurité
 	mainHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
 		requestID := fmt.Sprintf("%d", time.Now().UnixNano())
 		requestIDInt, _ := strconv.ParseInt(requestID, 10, 64)
-		
+
 		// Logger la requête entrante
 		log.WithFields(logrus.Fields{
 			"request_id": requestID,
@@ -123,6 +98,7 @@ func main() {
 		// Vérification du cache uniquement pour les requêtes GET
 		if r.Method == http.MethodGet {
 			if cachedResponse, found, err := memCache.Get(r.Context(), r.URL.Path); err == nil && found {
+				metrics.CacheHits.Inc()
 				log.WithFields(logrus.Fields{
 					"request_id": requestID,
 					"path":      r.URL.Path,
@@ -131,11 +107,13 @@ func main() {
 				w.Write(cachedResponse.Value.([]byte))
 				return
 			}
+			metrics.CacheMisses.Inc()
 		}
 
 		// Sélection du backend
 		backend, err := lb.NextBackend(r.Context())
 		if err != nil {
+			metrics.RecordRequest(r.Method, r.URL.Path, http.StatusServiceUnavailable, time.Since(start).Seconds(), 0)
 			log.WithFields(logrus.Fields{
 				"request_id": requestID,
 				"error":     err,
@@ -144,15 +122,10 @@ func main() {
 			return
 		}
 
-		// Logger le backend sélectionné
-		log.WithFields(logrus.Fields{
-			"request_id": requestID,
-			"backend":    backend.URL,
-		}).Info("Backend sélectionné")
-		
 		// Créer une nouvelle requête pour le backend
 		backendReq, err := http.NewRequestWithContext(r.Context(), r.Method, backend.URL+r.URL.Path, r.Body)
 		if err != nil {
+			metrics.RecordRequest(r.Method, r.URL.Path, http.StatusBadGateway, time.Since(start).Seconds(), 0)
 			log.WithFields(logrus.Fields{
 				"request_id": requestID,
 				"error":     err,
@@ -161,30 +134,30 @@ func main() {
 			return
 		}
 
-		// Copier les headers de la requête originale
-		for name, values := range r.Header {
-			for _, value := range values {
-				backendReq.Header.Add(name, value)
-			}
+		// Copier les headers
+		for k, v := range r.Header {
+			backendReq.Header[k] = v
 		}
 
-		// Faire la requête au backend
+		// Envoyer la requête au backend
 		client := &http.Client{Timeout: 10 * time.Second}
 		resp, err := client.Do(backendReq)
 		if err != nil {
+			metrics.RecordBackendRequest(backend.URL, time.Since(start).Seconds(), err)
 			log.WithFields(logrus.Fields{
 				"request_id": requestID,
 				"backend":    backend.URL,
 				"error":     err,
-			}).Error("Erreur réponse backend")
+			}).Error("Erreur requête backend")
 			http.Error(w, "Backend error", http.StatusBadGateway)
 			return
 		}
 		defer resp.Body.Close()
 
-		// Lire la réponse
+		// Copier la réponse
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
+			metrics.RecordRequest(r.Method, r.URL.Path, http.StatusInternalServerError, time.Since(start).Seconds(), 0)
 			log.WithFields(logrus.Fields{
 				"request_id": requestID,
 				"error":     err,
@@ -193,43 +166,30 @@ func main() {
 			return
 		}
 
-		// Logger la réponse du backend
-		log.WithFields(logrus.Fields{
-			"request_id":    requestID,
-			"backend":       backend.URL,
-			"status_code":   resp.StatusCode,
-			"response_size": len(body),
-		}).Info("Réponse reçue du backend")
-
-		// Mettre en cache uniquement pour les requêtes GET
-		if r.Method == http.MethodGet {
-			headers := make(map[string]string)
-			for name, values := range resp.Header {
-				headers[name] = values[0]
-			}
-			if err := memCache.Set(r.Context(), r.URL.Path, body, headers, time.Hour); err != nil {
+		// Mettre en cache si c'est une requête GET
+		if r.Method == http.MethodGet && resp.StatusCode == http.StatusOK {
+			if err := memCache.Set(r.Context(), r.URL.Path, body, map[string]string{}, 1*time.Hour); err != nil {
 				log.WithFields(logrus.Fields{
 					"request_id": requestID,
 					"error":     err,
-				}).Warn("Erreur mise en cache")
+				}).Error("Erreur mise en cache")
 			}
 		}
 
-		// Copier les headers de la réponse
-		for name, values := range resp.Header {
-			for _, value := range values {
-				w.Header().Add(name, value)
-			}
+		// Copier les headers de réponse
+		for k, v := range resp.Header {
+			w.Header()[k] = v
 		}
-
-		// Envoyer la réponse au client
 		w.WriteHeader(resp.StatusCode)
 		w.Write(body)
 
+		// Enregistrer les métriques finales
+		metrics.RecordRequest(r.Method, r.URL.Path, resp.StatusCode, time.Since(start).Seconds(), int64(len(body)))
+		metrics.RecordBackendRequest(backend.URL, time.Since(start).Seconds(), nil)
+
 		log.WithFields(logrus.Fields{
-			"request_id":    requestID,
-			"path":         r.URL.Path,
-			"status_code":  resp.StatusCode,
+			"request_id":   requestID,
+			"status_code": resp.StatusCode,
 			"backend":      backend.URL,
 			"elapsed_time": time.Since(time.Unix(0, requestIDInt)).String(),
 		}).Info("Requête terminée")
@@ -258,7 +218,7 @@ func main() {
 			"address": srv.Addr,
 			"pid":     os.Getpid(),
 		}).Info("Démarrage du serveur CDN")
-		
+
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.WithError(err).Fatal("Erreur démarrage serveur")
 		}

@@ -1,9 +1,0 @@
-global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
-
-scrape_configs:
-  - job_name: 'goofy_cdn'
-    static_configs:
-      - targets: ['app-dev:8080', 'app-prod:8080']
-    metrics_path: '/metrics'

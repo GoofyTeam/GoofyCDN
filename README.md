@@ -76,6 +76,15 @@ app/
   - Implémente l'interface `Cache`
   - Utilise `hashicorp/golang-lru` pour la gestion du cache en mémoire
   - Limite configurable de la taille du cache
+  - Cache uniquement les requêtes GET
+  - TTL configurable pour les entrées du cache
+
+- **Endpoints de Gestion du Cache** :
+  - `POST /cache/purge` : Vide complètement le cache
+    ```bash
+    # Exemple d'utilisation
+    curl -X POST http://localhost:8080/cache/purge
+    ```
 
 ### 2. Load Balancer
 
@@ -84,12 +93,35 @@ app/
   - `WeightedRoundRobin` : Distribution pondérée selon la capacité des serveurs
   - `LeastConnections` : Envoi vers le serveur le moins chargé
 
-### 3. Middlewares
+### 3. Endpoints API
 
-- **Sécurité** (`internal/middleware/middleware.go`) :
-  - Rate limiting avec `golang.org/x/time/rate`
-  - Headers de sécurité HTTP
-  - Protection contre les attaques courantes
+#### Backend Service (port 8080)
+- **Authentification** :
+  - `POST /register` : Inscription d'un nouvel utilisateur
+  - `POST /login` : Connexion utilisateur
+
+- **Gestion des Fichiers** (requiert authentification) :
+  - `POST /api/files` : Upload d'un fichier
+  - `GET /api/files/:id` : Récupération d'un fichier
+  - `DELETE /api/files/:id` : Suppression d'un fichier
+
+- **Gestion des Dossiers** (requiert authentification) :
+  - `POST /api/folders` : Création d'un dossier
+  - `GET /api/folders/:id` : Liste du contenu d'un dossier
+  - `DELETE /api/folders/:id` : Suppression d'un dossier
+
+- **Health Check** :
+  - `GET /health` : Vérification de l'état du service
+
+#### CDN Service (port 8080)
+- **Cache** :
+  - `POST /cache/purge` : Vide le cache
+  - Note : Seules les requêtes GET sont mises en cache
+
+- **Monitoring** :
+  - `GET /metrics` : Métriques Prometheus
+  - `GET /health` : État du CDN
+  - `GET /ready` : Vérification de disponibilité
 
 ### 4. Monitoring
 
@@ -98,6 +130,8 @@ app/
   - Nombre de requêtes par endpoint
   - Taux de succès/erreur
   - Utilisation du cache
+
+- **Visualisation dans Grafana** via Prometheus
 
 ### 5. Application Principale
 

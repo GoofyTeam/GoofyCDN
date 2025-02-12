@@ -31,7 +31,7 @@ var (
 	BackendLatency = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "cdn_backend_latency_seconds",
 		Help:    "Latence des requêtes par backend",
-		Buckets: prometheus.DefBuckets,
+		Buckets: []float64{0.01, 0.05, 0.1, 0.5, 1, 2, 5},
 	}, []string{"backend_url"})
 
 	BackendErrors = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -119,6 +119,11 @@ func UpdateSystemMetrics(cpuPercent float64, memoryBytes int64, connections int)
 	CpuUsage.Set(cpuPercent)
 	MemoryUsage.Set(float64(memoryBytes))
 	OpenConnections.Set(float64(connections))
+}
+
+// UpdateActiveBackends met à jour le nombre de backends actifs
+func UpdateActiveBackends(count int32) {
+	ActiveBackends.Set(float64(count))
 }
 
 // RecordSecurityEvent enregistre les événements de sécurité
