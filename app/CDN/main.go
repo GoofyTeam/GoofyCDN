@@ -55,6 +55,17 @@ func main() {
 	// Endpoint de monitoring
 	mux.Handle("/metrics", promhttp.Handler())
 
+	// Health check endpoints
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("healthy"))
+	})
+
+	mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ready"))
+	})
+
 	// Route principale avec middleware de sécurité
 	mainHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Vérification du cache
@@ -98,7 +109,8 @@ func main() {
 	// Démarrage du serveur en arrière-plan
 	go func() {
 		log.Info("Starting server on :8080")
-		if err := srv.ListenAndServeTLS("cert.pem", "key.pem"); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			// if err := srv.ListenAndServeTLS("cert.pem", "key.pem"); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed: %v", err)
 		}
 	}()

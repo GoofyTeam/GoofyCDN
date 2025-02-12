@@ -5,10 +5,10 @@ Ce projet implémente un Content Delivery Network (CDN) en Go, conçu pour optim
 ## 🚀 Fonctionnalités
 
 - **Proxy HTTP** : Redirection intelligente des requêtes
-- **Système de Cache** : 
+- **Système de Cache** :
   - Cache LRU en mémoire
   - Support Redis pour le cache distribué
-- **Load Balancing** : 
+- **Load Balancing** :
   - Round Robin
   - Weighted Round Robin
   - Least Connections
@@ -30,22 +30,27 @@ Ce projet implémente un Content Delivery Network (CDN) en Go, conçu pour optim
 ## 🚦 Démarrage
 
 1. **Mode Développement** :
+
 ```bash
 docker compose up app-dev
 ```
+
 - Hot-reload activé
 - Accessible sur http://localhost:8080
 - Métriques sur http://localhost:8080/metrics
 
 2. **Mode Production** :
+
 ```bash
 docker compose up app-prod
 ```
+
 - Optimisé pour la production
 - Accessible sur http://localhost:8081
 - Métriques sur http://localhost:8081/metrics
 
 3. **Services additionnels** :
+
 - Grafana : http://localhost:3000 (admin/admin)
 - Prometheus : http://localhost:9090
 - Redis : localhost:6379
@@ -66,24 +71,28 @@ app/
 ## 🔍 Fonctionnement Détaillé
 
 ### 1. Système de Cache
+
 - **Cache LRU** (`internal/cache/cache.go`) :
   - Implémente l'interface `Cache`
   - Utilise `hashicorp/golang-lru` pour la gestion du cache en mémoire
   - Limite configurable de la taille du cache
 
 ### 2. Load Balancer
+
 - **Implémentations** (`internal/loadbalancer/loadbalancer.go`) :
   - `RoundRobin` : Distribution cyclique des requêtes
   - `WeightedRoundRobin` : Distribution pondérée selon la capacité des serveurs
   - `LeastConnections` : Envoi vers le serveur le moins chargé
 
 ### 3. Middlewares
+
 - **Sécurité** (`internal/middleware/middleware.go`) :
   - Rate limiting avec `golang.org/x/time/rate`
   - Headers de sécurité HTTP
   - Protection contre les attaques courantes
 
 ### 4. Monitoring
+
 - **Métriques** :
   - Temps de réponse des requêtes
   - Nombre de requêtes par endpoint
@@ -91,7 +100,9 @@ app/
   - Utilisation du cache
 
 ### 5. Application Principale
+
 Le fichier `main.go` orchestre tous ces composants :
+
 1. Initialise le logger et le cache
 2. Configure le load balancer
 3. Met en place les middlewares de sécurité et monitoring
@@ -100,6 +111,7 @@ Le fichier `main.go` orchestre tous ces composants :
 ## 📊 Monitoring
 
 ### Métriques disponibles :
+
 - `http_duration_seconds` : Temps de réponse des requêtes
 - `http_requests_total` : Nombre total de requêtes par endpoint
 - Visualisation dans Grafana via Prometheus
@@ -125,12 +137,14 @@ Le fichier `main.go` orchestre tous ces composants :
 ## 🚀 Déploiement sur AWS EKS
 
 ### Prérequis AWS
+
 - Un compte AWS avec les droits nécessaires
 - AWS CLI configuré
 - `eksctl` installé
 - `kubectl` installé
 
 ### 1. Construction de l'Image Docker
+
 ```bash
 # Construction de l'image
 docker build -t misterzapp/goofy-cdn:latest -f docker/cdn/Dockerfile .
@@ -142,6 +156,7 @@ docker push misterzapp/goofy-cdn:latest
 ### 2. Déploiement sur EKS
 
 #### Création du Cluster
+
 ```bash
 # Création du cluster EKS
 eksctl create cluster \
@@ -155,6 +170,7 @@ eksctl create cluster \
 ```
 
 #### Déploiement de l'Application
+
 ```bash
 # Déployer l'application
 kubectl apply -f k8s/cdn-deployment.yaml
@@ -168,6 +184,7 @@ kubectl get services
 ### 3. Gestion des Ressources
 
 #### Vérification des Ressources
+
 ```bash
 # Lister les nœuds
 kubectl get nodes
@@ -180,6 +197,7 @@ kubectl logs -l app=goofy-cdn
 ```
 
 #### Nettoyage des Ressources
+
 ```bash
 # Supprimer le nodegroup
 eksctl delete nodegroup --cluster goofy-cdn-cluster --name goofy-cdn-workers
@@ -189,6 +207,7 @@ eksctl delete cluster --name goofy-cdn-cluster
 ```
 
 ### 4. Coûts AWS à Surveiller
+
 - Cluster EKS : ~$0.10 par heure
 - Nœuds EC2 (t3.small) : ~$0.023 par heure par nœud
 - Load Balancer : ~$0.025 par heure
@@ -199,7 +218,9 @@ eksctl delete cluster --name goofy-cdn-cluster
 ### 5. Troubleshooting Courant
 
 #### Problèmes de CNI ( a voir car problème pour l'instant)
+
 Si les pods restent en état "ContainerCreating" :
+
 ```bash
 # Réinstaller le CNI Amazon VPC
 kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/v1.12.6/config/master/aws-k8s-cni.yaml
@@ -209,8 +230,109 @@ kubectl delete pods -n kube-system -l k8s-app=aws-node
 ```
 
 #### Problèmes de Permissions
+
 Vérifier que le rôle IAM a les bonnes politiques :
+
 - AmazonEKSClusterPolicy
 - AmazonEKSServicePolicy
 - AmazonEKSVPCResourceController
 - AmazonEKS_CNI_Policy
+
+## 🖥 Déploiement Local avec Docker Desktop
+
+### Prérequis
+- Docker Desktop installé
+- Kubernetes activé dans Docker Desktop (avec kubeadm)
+- kubectl installé (`brew install kubectl`)
+
+### 1. Configuration de Kubernetes dans Docker Desktop
+1. Ouvrir Docker Desktop
+2. Aller dans Settings > Kubernetes
+3. Sélectionner "Enable Kubernetes"
+4. Choisir "kubeadm" comme méthode de provisionnement
+5. Cliquer sur "Apply & Restart"
+
+### 2. Construction de l'Image
+```bash
+# Construire l'image localement
+docker build -t goofy-cdn:local -f docker/cdn/Dockerfile .
+```
+
+### 3. Déploiement sur Kubernetes Local
+
+1. **Vérifier que kubectl utilise le bon contexte** :
+```bash
+# Voir les contextes disponibles
+kubectl config get-contexts
+
+# Passer au contexte Docker Desktop si nécessaire
+kubectl config use-context docker-desktop
+```
+
+2. **Déployer l'application** :
+```bash
+# Appliquer les configurations
+kubectl apply -f k8s/cdn-deployment.yaml
+kubectl apply -f k8s/cdn-service.yaml
+
+# Vérifier le déploiement
+kubectl get pods
+kubectl get services
+```
+
+### 4. Accès à l'Application
+
+L'application est accessible via les endpoints suivants :
+- **URL Principale** : `http://localhost:80`
+- **Métriques** : `http://localhost:80/metrics`
+- **Health Check** : `http://localhost:80/health`
+- **Readiness** : `http://localhost:80/ready`
+
+### 5. Commandes Utiles
+
+```bash
+# Voir les logs de l'application
+kubectl logs -l app=goofy-cdn
+
+# Voir les détails du pod
+kubectl describe pod -l app=goofy-cdn
+
+# Redémarrer le déploiement (après modification du code)
+kubectl delete pod -l app=goofy-cdn
+
+# Supprimer le déploiement
+kubectl delete -f k8s/cdn-deployment.yaml
+kubectl delete -f k8s/cdn-service.yaml
+```
+
+### 6. Troubleshooting
+
+#### Pod en CrashLoopBackOff ou Error
+```bash
+# Voir les logs du pod
+kubectl logs -l app=goofy-cdn
+
+# Voir les détails et événements du pod
+kubectl describe pod -l app=goofy-cdn
+```
+
+#### Service inaccessible
+1. Vérifier que le service est bien créé :
+```bash
+kubectl get services
+```
+
+2. Vérifier que le pod est Ready :
+```bash
+kubectl get pods -l app=goofy-cdn
+```
+
+3. Voir les endpoints :
+```bash
+kubectl get endpoints goofy-cdn-service
+```
+
+#### Problèmes d'image
+Si l'image n'est pas trouvée, assurez-vous que :
+1. L'image est bien construite localement : `docker images | grep goofy-cdn`
+2. Le fichier deployment.yaml utilise le bon nom d'image : `image: goofy-cdn:local`

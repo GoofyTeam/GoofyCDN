@@ -45,6 +45,7 @@ type Cache interface {
 type MemoryCache struct {
 	lru     *lru.Cache
 	metrics CacheMetrics
+	maxSize int
 }
 
 // NewMemoryCache crée une nouvelle instance de MemoryCache
@@ -53,7 +54,10 @@ func NewMemoryCache(size int) (*MemoryCache, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &MemoryCache{lru: l}, nil
+	return &MemoryCache{
+		lru:     l,
+		maxSize: size,
+	}, nil
 }
 
 // Get récupère une valeur du cache mémoire
@@ -82,8 +86,17 @@ func (m *MemoryCache) Set(ctx context.Context, key string, value interface{}, he
 		Headers:    headers,
 		Expiration: time.Now().Add(ttl),
 	}
+
+	// Si la clé existe déjà, ne pas incrémenter le compteur
+	if _, exists := m.lru.Get(key); !exists {
+		// Si le cache est plein, le LRU va automatiquement évincer un élément
+		if m.lru.Len() >= m.maxSize {
+			atomic.AddUint64(&m.metrics.Items, ^uint64(0)) // Décrémente le compteur pour l'élément qui sera évincé
+		}
+		atomic.AddUint64(&m.metrics.Items, 1)
+	}
+
 	m.lru.Add(key, entry)
-	atomic.AddUint64(&m.metrics.Items, 1)
 	return nil
 }
 
