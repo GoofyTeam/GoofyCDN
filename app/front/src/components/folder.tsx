@@ -14,7 +14,7 @@ interface FolderProps {
 const FolderComponent: React.FC<FolderProps> = ({ folderName, onClick }) => {
   return (
     <div
-      className="cursor-pointer group p-4 rounded-lg justify-between transition-colors duration-200 flex w-full max-w-60 gap-4 bg-gray-200 hover:bg-gray-300"
+      className="cursor-pointer group p-4 rounded-lg justify-between transition-colors duration-200 flex w-full max-w-60 gap-4 bg-gray-50 hover:bg-gray-100"
       onClick={onClick}
     >
       <div>
@@ -23,9 +23,9 @@ const FolderComponent: React.FC<FolderProps> = ({ folderName, onClick }) => {
       <div>
         <p className="whitespace-nowrap">{folderName}</p>
       </div>
-      <div className="flex group-hover:bg-gray-300 bg-gray-200 hover:bg-gray-400 rounded-full transition-colors duration-200">
+      <div className="flex  group-hover:bg-gray-100 bg-gray-50 hover:bg-gray-300 rounded-full transition-colors duration-200">
         <Popover>
-          <PopoverTrigger>
+          <PopoverTrigger className="cursor-pointer">
             <EllipsisVertical strokeWidth={1} />
           </PopoverTrigger>
           <PopoverContent>

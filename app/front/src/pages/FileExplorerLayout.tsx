@@ -3,8 +3,7 @@ import FolderComponent from "@/components/folder";
 
 export const FileExplorerLayout = () => {
   return (
-    <main className="bg-gray-100 h-screen w-full p-4">
-      <p className="font-bold text-2xl my-4">Your drive</p>
+    <main className=" h-screen w-full">
       <div className="mb-4 ">
         <p className="font-semibold text-xl my-4">Folders</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">

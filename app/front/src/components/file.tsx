@@ -29,7 +29,7 @@ const FileComponent: React.FC<FileProps> = ({
 }) => {
   return (
     <div
-      className="cursor-pointer p-4 rounded-lg transition-colors duration-200 flex flex-col w-full max-w-60 aspect-[5/4] bg-gray-200 hover:bg-gray-300"
+      className="cursor-pointer p-4 rounded-lg transition-colors duration-200 flex flex-col w-full max-w-60 aspect-[5/4] bg-slate-50 hover:bg-gray-100"
       onClick={onClick}
     >
       <div className="flex-1 flex items-center justify-center">
