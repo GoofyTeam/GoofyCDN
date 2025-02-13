@@ -8,6 +8,16 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import useAuth from "@/hooks/useAuth";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Button } from "./ui/button";
+import { PlusIcon } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
 
 export function SiteHeader() {
   const navigate = useNavigate();
@@ -30,11 +40,47 @@ export function SiteHeader() {
   };
 
   return (
-    <header className="border-grid sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3 flex items-center justify-end">
+    <header className="border-grid top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3 flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <PlusIcon /> New Folder
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Are you absolutely sure?</DialogTitle>
+              <DialogDescription>
+                This action cannot be undone. This will permanently delete your
+                account and remove your data from our servers.
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <PlusIcon /> New File
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Are you absolutely sure?</DialogTitle>
+              <DialogDescription>
+                This action cannot be undone. This will permanently delete your
+                account and remove your data from our servers.
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+      </div>
       <Popover>
         <PopoverTrigger>
           <Avatar>
-            <AvatarFallback>CN</AvatarFallback>
+            <AvatarFallback>
+              {email ? email.slice(0, 2).toUpperCase() : "U"}
+            </AvatarFallback>
           </Avatar>
         </PopoverTrigger>
         <PopoverContent>
