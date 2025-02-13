@@ -1,5 +1,10 @@
 import React from "react";
-import { Folder } from "lucide-react";
+import { EllipsisVertical, Folder } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@radix-ui/react-popover";
 
 interface FolderProps {
   folderName: string;
@@ -9,14 +14,26 @@ interface FolderProps {
 const FolderComponent: React.FC<FolderProps> = ({ folderName, onClick }) => {
   return (
     <div
-      className="cursor-pointer p-4 rounded-lg transition-colors duration-200 flex flex-col w-full max-w-60 aspect-[5/4] bg-gray-200 hover:bg-gray-300"
+      className="cursor-pointer group p-4 rounded-lg justify-between transition-colors duration-200 flex w-full max-w-60 gap-4 bg-gray-200 hover:bg-gray-300"
       onClick={onClick}
     >
-      <div className="h-8/10">
-        <Folder strokeWidth={1} className="w-full h-full" />
+      <div>
+        <Folder strokeWidth={1} />
       </div>
-      <div className="h-2/10">
+      <div>
         <p>{folderName}</p>
+      </div>
+      <div className="flex group-hover:bg-gray-300 bg-gray-200 hover:bg-gray-400 rounded-full transition-colors duration-200">
+        <Popover>
+          <PopoverTrigger>
+            <EllipsisVertical strokeWidth={1} />
+          </PopoverTrigger>
+          <PopoverContent>
+            <div>
+              <p>ajouter les action ici</p>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );
