@@ -8,6 +8,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import React from "react";
+import { Toaster } from "@/components/ui/toaster";
 
 const Layout: React.FC = () => {
   const location = useLocation();
@@ -15,6 +16,7 @@ const Layout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Toaster />
       <SiteHeader />
       <div className="w-full py-8 px-8 sm:px-12 lg:px-20">
         <Breadcrumb>

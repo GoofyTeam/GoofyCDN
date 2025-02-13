@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import FileComponent from "@/components/file";
 import FolderComponent from "@/components/folder";
 import useAuth from "@/hooks/useAuth";
-
+import { useToast } from "@/hooks/use-toast";
 
 interface FolderItem {
   id: string;
@@ -14,6 +14,7 @@ export const FileExplorerLayout = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { accessToken } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchFolders = async () => {
@@ -43,6 +44,16 @@ export const FileExplorerLayout = () => {
     fetchFolders();
   }, [accessToken]);
 
+  const handleDeleteFolder = (folderId: string) => {
+    setFolders((folders) => folders.filter((folder) => folder.id !== folderId));
+    const folderToDelete = folders.find((folder) => folder.id === folderId);
+    toast({
+      title: "Delete Folder",
+      description: `Folder ${folderToDelete?.name || ""} deleted successfully`,
+      variant: "default",
+    });
+  };
+
   return (
     <main className=" h-screen w-full">
       <div className="mb-4 ">
@@ -57,7 +68,8 @@ export const FileExplorerLayout = () => {
             <FolderComponent
               key={folder.id}
               folderName={folder.name}
-              onClick={() => console.log(`Dossier ouvert: ${folder.name}`)}
+              folderId={folder.id}
+              onDelete={handleDeleteFolder}
             />
           ))}
         </div>
