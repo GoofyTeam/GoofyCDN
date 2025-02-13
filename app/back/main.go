@@ -60,6 +60,9 @@ func main() {
 	// Configuration de Gin
 	r := gin.Default()
 
+	// Ajouter le middleware CORS
+	r.Use(middleware.CORSMiddleware())
+
 	// Configuration des routes de test
 	api.SetupTestRoutes(r)
 
