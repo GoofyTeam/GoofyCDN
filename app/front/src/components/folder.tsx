@@ -8,6 +8,7 @@ import {
 import useAuth from "@/hooks/useAuth";
 
 import { Button } from "./ui/button";
+import { Link } from "@tanstack/react-router";
 
 interface FolderProps {
   folderName: string;
@@ -43,7 +44,11 @@ const FolderComponent: React.FC<FolderProps> = ({
   };
 
   return (
-    <div className="cursor-pointer group py-4 px-2 rounded-lg justify-between transition-colors duration-200 flex w-full gap-2 bg-gray-50 hover:bg-gray-100 ">
+    <Link
+      /* @ts-expect-error - tanstack il sait pas mais nous on se sait */
+      to={`/drive/${folderId}`}
+      className="cursor-pointer group py-4 px-2 rounded-lg justify-between transition-colors duration-200 flex w-full gap-2 bg-gray-50 hover:bg-gray-100 "
+    >
       <div>
         <Folder strokeWidth={1} />
       </div>
@@ -71,7 +76,7 @@ const FolderComponent: React.FC<FolderProps> = ({
           </PopoverContent>
         </Popover>
       </div>
-    </div>
+    </Link>
   );
 };
 

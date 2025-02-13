@@ -16,6 +16,7 @@ import { Route as LoginImport } from './routes/login'
 import { Route as AuthenticatedImport } from './routes/_authenticated'
 import { Route as IndexImport } from './routes/index'
 import { Route as AuthenticatedDriveImport } from './routes/_authenticated/drive'
+import { Route as AuthenticatedDriveIndexImport } from './routes/_authenticated/drive/index'
 import { Route as AuthenticatedDriveFolderPathImport } from './routes/_authenticated/drive/$folderPath'
 
 // Create/Update Routes
@@ -47,6 +48,12 @@ const AuthenticatedDriveRoute = AuthenticatedDriveImport.update({
   id: '/drive',
   path: '/drive',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+
+const AuthenticatedDriveIndexRoute = AuthenticatedDriveIndexImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedDriveRoute,
 } as any)
 
 const AuthenticatedDriveFolderPathRoute =
@@ -102,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDriveFolderPathImport
       parentRoute: typeof AuthenticatedDriveImport
     }
+    '/_authenticated/drive/': {
+      id: '/_authenticated/drive/'
+      path: '/'
+      fullPath: '/drive/'
+      preLoaderRoute: typeof AuthenticatedDriveIndexImport
+      parentRoute: typeof AuthenticatedDriveImport
+    }
   }
 }
 
@@ -109,10 +123,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedDriveRouteChildren {
   AuthenticatedDriveFolderPathRoute: typeof AuthenticatedDriveFolderPathRoute
+  AuthenticatedDriveIndexRoute: typeof AuthenticatedDriveIndexRoute
 }
 
 const AuthenticatedDriveRouteChildren: AuthenticatedDriveRouteChildren = {
   AuthenticatedDriveFolderPathRoute: AuthenticatedDriveFolderPathRoute,
+  AuthenticatedDriveIndexRoute: AuthenticatedDriveIndexRoute,
 }
 
 const AuthenticatedDriveRouteWithChildren =
@@ -137,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/drive': typeof AuthenticatedDriveRouteWithChildren
   '/drive/$folderPath': typeof AuthenticatedDriveFolderPathRoute
+  '/drive/': typeof AuthenticatedDriveIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -144,8 +161,8 @@ export interface FileRoutesByTo {
   '': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/drive': typeof AuthenticatedDriveRouteWithChildren
   '/drive/$folderPath': typeof AuthenticatedDriveFolderPathRoute
+  '/drive': typeof AuthenticatedDriveIndexRoute
 }
 
 export interface FileRoutesById {
@@ -156,13 +173,21 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/_authenticated/drive': typeof AuthenticatedDriveRouteWithChildren
   '/_authenticated/drive/$folderPath': typeof AuthenticatedDriveFolderPathRoute
+  '/_authenticated/drive/': typeof AuthenticatedDriveIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '' | '/login' | '/register' | '/drive' | '/drive/$folderPath'
+  fullPaths:
+    | '/'
+    | ''
+    | '/login'
+    | '/register'
+    | '/drive'
+    | '/drive/$folderPath'
+    | '/drive/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '' | '/login' | '/register' | '/drive' | '/drive/$folderPath'
+  to: '/' | '' | '/login' | '/register' | '/drive/$folderPath' | '/drive'
   id:
     | '__root__'
     | '/'
@@ -171,6 +196,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/_authenticated/drive'
     | '/_authenticated/drive/$folderPath'
+    | '/_authenticated/drive/'
   fileRoutesById: FileRoutesById
 }
 
@@ -223,11 +249,16 @@ export const routeTree = rootRoute
       "filePath": "_authenticated/drive.tsx",
       "parent": "/_authenticated",
       "children": [
-        "/_authenticated/drive/$folderPath"
+        "/_authenticated/drive/$folderPath",
+        "/_authenticated/drive/"
       ]
     },
     "/_authenticated/drive/$folderPath": {
       "filePath": "_authenticated/drive/$folderPath.tsx",
+      "parent": "/_authenticated/drive"
+    },
+    "/_authenticated/drive/": {
+      "filePath": "_authenticated/drive/index.tsx",
       "parent": "/_authenticated/drive"
     }
   }

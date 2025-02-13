@@ -1,13 +1,28 @@
-import React from "react";
-import { File as FileIcon } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import {
+  Download,
+  File as FileIcon,
+  SquareArrowOutUpRight,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
+import useAuth from "@/hooks/useAuth";
+import { Button } from "./ui/button";
 
 interface FileProps {
+  id: string;
   fileName: string;
   fileSize: number;
   mimeType: string;
   createdAt: string; // ou Date, selon ce que vous recevez
   updatedAt: string;
-  onClick: () => void;
+  onClick?: () => void;
 }
 
 // Fonction utilitaire pour formater la taille du fichier
@@ -21,29 +36,104 @@ const formatBytes = (bytes: number, decimals = 2): string => {
 };
 
 const FileComponent: React.FC<FileProps> = ({
+  id,
   fileName,
   fileSize,
   mimeType,
   createdAt,
   onClick,
 }) => {
+  const { accessToken } = useAuth();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [fileUrl, setFileUrl] = useState<string | undefined>(undefined);
+
+  const fetchFile = async () => {
+    const file = await fetch(`http://localhost:8082/api/files/${id}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (!file.ok) {
+      throw new Error("Erreur lors de la récupération du fichier");
+    }
+    const fileBlob = await file.blob();
+    const fileUrl = URL.createObjectURL(fileBlob);
+    setFileUrl(fileUrl);
+  };
+
+  useEffect(() => {
+    if (isDialogOpen && id) {
+      fetchFile();
+    }
+  }, [id, isDialogOpen]);
+
   return (
-    <div
-      className="cursor-pointer p-4 rounded-lg transition-colors duration-200 flex flex-col w-full max-w-60 aspect-[5/4] bg-slate-50 hover:bg-gray-100"
-      onClick={onClick}
+    <Dialog
+      open={isDialogOpen}
+      onOpenChange={(isOpen) => setIsDialogOpen(isOpen)}
     >
-      <div className="flex-1 flex items-center justify-center">
-        <FileIcon strokeWidth={1} className="w-16 h-16" />
-      </div>
-      <div className="mt-2">
-        <p className="font-bold text-sm">{fileName}</p>
-        <p className="text-xs text-gray-600">{mimeType}</p>
-        <p className="text-xs text-gray-600">{formatBytes(fileSize)}</p>
-        <p className="text-xs text-gray-600">
-          Créé le : {new Date(createdAt).toLocaleDateString()}
-        </p>
-      </div>
-    </div>
+      <DialogTrigger asChild>
+        <div
+          className="cursor-pointer p-4 rounded-lg transition-colors duration-200 flex flex-col w-full max-w-60 aspect-[5/4] bg-slate-50 hover:bg-gray-100"
+          onClick={onClick}
+        >
+          <div className="flex-1 flex items-center justify-center">
+            <FileIcon strokeWidth={1} className="w-16 h-16" />
+          </div>
+          <div className="mt-2">
+            <p className="font-bold text-sm">{fileName}</p>
+            <p className="text-xs text-gray-600">{mimeType}</p>
+            <p className="text-xs text-gray-600">{formatBytes(fileSize)}</p>
+            <p className="text-xs text-gray-600">
+              Créé le : {new Date(createdAt).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{fileName}</DialogTitle>
+          <DialogDescription>
+            Size : {formatBytes(fileSize)} | Type : {mimeType} | Created at :{" "}
+            {new Date(createdAt).toLocaleDateString()}
+          </DialogDescription>
+        </DialogHeader>
+        {fileUrl ? (
+          <iframe
+            src={fileUrl}
+            width="100%"
+            height="500px"
+            title="File Viewer"
+          ></iframe>
+        ) : (
+          <p>Chargement du fichier...</p>
+        )}
+        <div className="flex justify-end gap-2 mt-1">
+          <Button variant="outline" asChild>
+            <a href={fileUrl} target="_blank" rel="noreferrer">
+              <SquareArrowOutUpRight /> Open in new tab
+            </a>
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (fileUrl) {
+                const a = document.createElement("a");
+
+                a.href = fileUrl;
+                a.download = fileName;
+                a.click();
+
+                URL.revokeObjectURL(fileUrl);
+              }
+            }}
+          >
+            <Download /> Download
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

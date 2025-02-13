@@ -1,13 +1,23 @@
+import FileComponent from "@/components/file";
 import FolderComponent from "@/components/folder";
 import { useToast } from "@/hooks/use-toast";
-import { useLoaderData, useRouter } from "@tanstack/react-router";
+import {
+  useLoaderData,
+  useMatchRoute,
+  useRouter,
+} from "@tanstack/react-router";
+import clsx from "clsx";
 
 export const FileExplorerLayout = () => {
   const router = useRouter();
-  const { toast } = useToast();
-  const { folders } = useLoaderData({
-    from: "/_authenticated/drive",
+  const matchRoute = useMatchRoute();
+  const params = matchRoute({ to: "/drive" });
+  const { folders, files } = useLoaderData({
+    from: params
+      ? "/_authenticated/drive/"
+      : "/_authenticated/drive/$folderPath",
   });
+  const { toast } = useToast();
 
   const handleDeleteFolder = (folderId: string) => {
     const folderToDelete = folders.find((folder) => folder.id === folderId);
@@ -37,91 +47,29 @@ export const FileExplorerLayout = () => {
           ))}
         </div>
       </div>
-      {/*   <div>
+      <div className={clsx("mb-4", { hidden: files.length === 0 })}>
         <p className="font-semibold text-xl my-4">Files</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-          <FileComponent
-            fileName="Fichier 1"
-            onClick={() => {}}
-            fileSize={0}
-            mimeType={""}
-            createdAt={""}
-            updatedAt={""}
-          />
-          <FileComponent
-            fileName="Fichier 1"
-            onClick={() => {}}
-            fileSize={0}
-            mimeType={""}
-            createdAt={""}
-            updatedAt={""}
-          />
-          <FileComponent
-            fileName="Fichier 1"
-            onClick={() => {}}
-            fileSize={0}
-            mimeType={""}
-            createdAt={""}
-            updatedAt={""}
-          />
-          <FileComponent
-            fileName="Fichier 1"
-            onClick={() => {}}
-            fileSize={0}
-            mimeType={""}
-            createdAt={""}
-            updatedAt={""}
-          />
-          <FileComponent
-            fileName="Fichier 1"
-            onClick={() => {}}
-            fileSize={0}
-            mimeType={""}
-            createdAt={""}
-            updatedAt={""}
-          />
-          <FileComponent
-            fileName="Fichier 1"
-            onClick={() => {}}
-            fileSize={0}
-            mimeType={""}
-            createdAt={""}
-            updatedAt={""}
-          />
-          <FileComponent
-            fileName="Fichier 1"
-            onClick={() => {}}
-            fileSize={0}
-            mimeType={""}
-            createdAt={""}
-            updatedAt={""}
-          />
-          <FileComponent
-            fileName="Fichier 1"
-            onClick={() => {}}
-            fileSize={0}
-            mimeType={""}
-            createdAt={""}
-            updatedAt={""}
-          />
-          <FileComponent
-            fileName="Fichier 1"
-            onClick={() => {}}
-            fileSize={0}
-            mimeType={""}
-            createdAt={""}
-            updatedAt={""}
-          />
-          <FileComponent
-            fileName="Fichier 1"
-            onClick={() => {}}
-            fileSize={0}
-            mimeType={""}
-            createdAt={""}
-            updatedAt={""}
-          />
+          {files.map((file) => (
+            <FileComponent
+              id={file.id}
+              fileName={file.name}
+              fileSize={file.size}
+              mimeType={file.mime_type}
+              createdAt={file.created_at}
+              updatedAt={file.updated_at}
+              key={
+                file.id +
+                file.name +
+                file.size +
+                file.mime_type +
+                file.created_at +
+                file.updated_at
+              }
+            />
+          ))}
         </div>
-      </div> */}
+      </div>
     </main>
   );
 };

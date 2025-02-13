@@ -6,7 +6,7 @@ import {
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import useAuth from "@/hooks/useAuth";
-import { useNavigate, useRouter } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { PlusIcon } from "lucide-react";
@@ -23,6 +23,12 @@ import { Input } from "./ui/input";
 export function SiteHeader() {
   const navigate = useNavigate();
   const router = useRouter();
+  const params = useParams({
+    from: "/_authenticated/drive/$folderPath",
+    shouldThrow: false,
+  });
+
+  const folderPath = params?.folderPath ?? undefined;
 
   const { logout, isAuthenticated, user, accessToken } = useAuth();
   const [email, setEmail] = useState<string | null>(null);
@@ -71,6 +77,47 @@ export function SiteHeader() {
     }
   };
 
+  const handleNewFile = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!folderPath) {
+      console.error("Aucun dossier sélectionné");
+      return;
+    }
+
+    const target = e.target as typeof e.target & {
+      file: { files: FileList };
+    };
+
+    const file = target.file.files?.[0];
+    if (!file) {
+      console.log("Aucun fichier sélectionné");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder_id", folderPath);
+
+    console.log("Fichier sélectionné", file);
+
+    const res = await fetch("http://localhost:8082/api/files", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: formData,
+    });
+
+    console.log("Réponse de l'API", res);
+    if (res.ok) {
+      console.log("Fichier envoyé avec succès");
+      router.invalidate();
+    } else {
+      console.error("Erreur lors de l'envoi du fichier");
+    }
+  };
+
   return (
     <header className="border-grid top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3 flex items-center justify-between">
       <div className="flex items-center gap-4">
@@ -112,12 +159,15 @@ export function SiteHeader() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Are you absolutely sure?</DialogTitle>
-              <DialogDescription>
-                This action cannot be undone. This will permanently delete your
-                account and remove your data from our servers.
+              <DialogTitle>Add a new file</DialogTitle>
+              <DialogDescription className="my-2">
+                Please select a file to upload
               </DialogDescription>
             </DialogHeader>
+            <form onSubmit={handleNewFile} className="flex gap-4">
+              <Input name="file" type="file" placeholder="File name" />
+              <Button type="submit">Save file</Button>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
