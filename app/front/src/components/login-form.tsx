@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "@tanstack/react-router";
+import React from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,64 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"form">) {
+  const navigate = useNavigate();
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    console.log("Formulaire de login soumis");
+
+    // Récupération des valeurs du formulaire
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    console.log("Email saisi :", email);
+    console.log("Mot de passe saisi :", password);
+
+    try {
+      console.log("Envoi de la requête API pour le login");
+      const response = await fetch("http://localhost:8082/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Le login a échoué");
+        // Vous pouvez afficher un message d'erreur à l'utilisateur ici
+        return;
+      }
+
+      console.log("Login réussi !");
+      // Récupérer les données renvoyées par le serveur (exemple : token)
+      const data = await response.json();
+
+      // Vérifiez que la réponse contient bien un token
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      } else {
+        console.warn("Aucun token reçu dans la réponse");
+      }
+      // Sauvegarder également l'email, si nécessaire
+      localStorage.setItem("userEmail", email);
+
+      console.log("Redirection vers la page d'accueil");
+      navigate({ to: "/" });
+    } catch (error) {
+      console.error("Erreur lors du login :", error);
+    }
+  };
+
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <form
+      onSubmit={handleSubmit}
+      className={cn("flex flex-col gap-6", className)}
+      {...props}
+    >
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold">Login to your account</h1>
         <p className="text-balance text-sm text-muted-foreground">
@@ -43,64 +99,5 @@ export function LoginForm({
         </Link>
       </div>
     </form>
-  );
-}
-
-export default function LoginPage() {
-  const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    console.log("[Login] Form submitted");
-    setError(null);
-    setLoading(true);
-
-    const formData = new FormData(event.currentTarget);
-    const email = formData.get("email");
-    const password = formData.get("password");
-    console.log("[Login] Collected data:", { email, password });
-
-    try {
-      console.log("[Login] Sending request to http://localhost:8080/login");
-      const response = await fetch("http://localhost:8080/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      console.log("[Login] Response received with status:", response.status);
-      if (response.status === 200) {
-        const data = await response.json();
-        console.log("[Login] Login successful:", data);
-        localStorage.setItem("token", data.token);
-        console.log("[Login] Token saved in localStorage, redirecting to '/'");
-        navigate({ to: "/" });
-      } else {
-        const errorData = await response.json();
-        console.error(
-          "[Login] Login failed. Status:",
-          response.status,
-          "Error data:",
-          errorData
-        );
-        throw new Error(errorData.message || "Login failed");
-      }
-    } catch (err: any) {
-      console.error("[Login] Error caught during login:", err);
-      setError(err.message || "An error occurred during login");
-    } finally {
-      setLoading(false);
-      console.log("[Login] Login process completed");
-    }
-  }
-
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <LoginForm onSubmit={handleSubmit} />
-      {loading && <p className="mt-4">Loading...</p>}
-      {error && <p className="mt-4 text-red-500">{error}</p>}
-    </div>
   );
 }
