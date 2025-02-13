@@ -43,12 +43,14 @@ const FolderComponent: React.FC<FolderProps> = ({
   };
 
   return (
-    <div className="cursor-pointer group p-4 rounded-lg justify-between transition-colors duration-200 flex w-full max-w-60 gap-4 bg-gray-50 hover:bg-gray-100">
+    <div className="cursor-pointer group py-4 px-2 rounded-lg justify-between transition-colors duration-200 flex w-full gap-2 bg-gray-50 hover:bg-gray-100 ">
       <div>
         <Folder strokeWidth={1} />
       </div>
-      <div>
-        <p className="whitespace-nowrap">{folderName}</p>
+      <div className="overflow-hidden max-w-xs w-full">
+        <p className="whitespace-nowrap overflow-hidden text-ellipsis w-full">
+          {folderName}
+        </p>
       </div>
       <div className="flex  group-hover:bg-gray-100 bg-gray-50 hover:bg-gray-300 rounded-full transition-colors duration-200">
         <Popover>
@@ -59,7 +61,7 @@ const FolderComponent: React.FC<FolderProps> = ({
             <div>
               <Button
                 variant="destructive"
-                className="w-full"
+                className="w-full cursor-pointer"
                 onClick={handleDelete}
               >
                 <Trash strokeWidth={2} />
