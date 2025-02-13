@@ -1,52 +1,17 @@
-import { useEffect, useState } from "react";
-import FileComponent from "@/components/file";
 import FolderComponent from "@/components/folder";
-import useAuth from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-
-interface FolderItem {
-  id: string;
-  name: string;
-}
+import { useLoaderData, useRouter } from "@tanstack/react-router";
 
 export const FileExplorerLayout = () => {
-  const [folders, setFolders] = useState<FolderItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { accessToken } = useAuth();
+  const router = useRouter();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchFolders = async () => {
-      try {
-        const response = await fetch("http://localhost:8082/api/folders", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        });
-        if (!response.ok) {
-          throw new Error("Erreur lors de la récupération des dossiers");
-        }
-        const data = await response.json();
-        if (!Array.isArray(data)) {
-          throw new Error("Les données reçues ne sont pas valides");
-        }
-        setFolders(data);
-      } catch (error) {
-        setError("Erreur lors de la récupération des dossiers");
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchFolders();
-  }, [accessToken]);
+  const { folders } = useLoaderData({
+    from: "/_authenticated/drive",
+  });
 
   const handleDeleteFolder = (folderId: string) => {
-    setFolders((folders) => folders.filter((folder) => folder.id !== folderId));
     const folderToDelete = folders.find((folder) => folder.id === folderId);
+    router.invalidate();
     toast({
       title: "Delete Folder",
       description: `Folder ${folderToDelete?.name || ""} deleted successfully`,
@@ -58,10 +23,8 @@ export const FileExplorerLayout = () => {
     <main className=" h-screen w-full">
       <div className="mb-4 ">
         <p className="font-semibold text-xl my-4">Folders</p>
-        {loading && <p>Chargement des dossiers...</p>}
-        {error && <p className="text-red-500">{error}</p>}
-        {!loading && !error && folders.length === 0 && (
-          <p className="text-gray-500">Aucun dossier existant</p>
+        {folders.length === 0 && (
+          <p className="text-gray-500">Please create a folder first</p>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
           {folders.map((folder) => (
@@ -74,7 +37,7 @@ export const FileExplorerLayout = () => {
           ))}
         </div>
       </div>
-      <div>
+      {/*   <div>
         <p className="font-semibold text-xl my-4">Files</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
           <FileComponent
@@ -158,7 +121,7 @@ export const FileExplorerLayout = () => {
             updatedAt={""}
           />
         </div>
-      </div>
+      </div> */}
     </main>
   );
 };

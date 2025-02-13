@@ -6,7 +6,7 @@ import {
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import useAuth from "@/hooks/useAuth";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { PlusIcon } from "lucide-react";
@@ -22,6 +22,8 @@ import { Input } from "./ui/input";
 
 export function SiteHeader() {
   const navigate = useNavigate();
+  const router = useRouter();
+
   const { logout, isAuthenticated, user, accessToken } = useAuth();
   const [email, setEmail] = useState<string | null>(null);
   const [folderName, setFolderName] = useState("");
@@ -58,6 +60,8 @@ export function SiteHeader() {
       if (!response.ok) {
         throw new Error("Erreur lors de la création du dossier");
       }
+
+      router.invalidate();
 
       console.log("Dossier créé avec succès !");
       setFolderName("");
