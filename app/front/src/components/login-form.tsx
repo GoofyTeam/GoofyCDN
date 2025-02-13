@@ -4,12 +4,14 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import useAuth from "@/hooks/useAuth";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"form">) {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -47,12 +49,10 @@ export function LoginForm({
 
       // Vérifiez que la réponse contient bien un token
       if (data.token) {
-        localStorage.setItem("token", data.token);
+        await login({ id: email, email }, data.token);
       } else {
         console.warn("Aucun token reçu dans la réponse");
       }
-      // Sauvegarder également l'email, si nécessaire
-      localStorage.setItem("userEmail", email);
 
       console.log("Redirection vers la page d'accueil");
       navigate({ to: "/" });

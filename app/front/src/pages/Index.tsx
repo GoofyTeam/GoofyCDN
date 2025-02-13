@@ -1,27 +1,25 @@
 import FolderComponent from "@/components/folder";
 import { SiteHeader } from "@/components/header";
+import useAuth from "@/hooks/useAuth";
 import { useNavigate } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
+  const { logout, isAuthenticated, user } = useAuth();
   const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const storedEmail = localStorage.getItem("userEmail");
-
-    if (!token) {
+    if (!isAuthenticated) {
       console.log("Token absent, redirection vers la page de login");
       navigate({ to: "/login" });
     } else {
-      setEmail(storedEmail);
+      setEmail(user?.email ?? "");
     }
-  }, [navigate]);
+  }, [isAuthenticated, navigate, user?.email]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userEmail");
+  const handleLogout = async () => {
+    await logout();
     console.log("Utilisateur déconnecté, redirection vers la page de login");
     navigate({ to: "/login" });
   };
