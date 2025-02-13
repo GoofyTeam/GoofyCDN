@@ -63,8 +63,8 @@ export default function LoginPage() {
     console.log("[Login] Collected data:", { email, password });
 
     try {
-      console.log("[Login] Sending request to http://localhost:8082/login");
-      const response = await fetch("http://localhost:8082/login", {
+      console.log("[Login] Sending request to http://localhost:8080/login");
+      const response = await fetch("http://localhost:8080/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
