@@ -7,7 +7,7 @@ export const FileExplorerLayout = () => {
       <p className="font-bold text-2xl my-4">Your drive</p>
       <div className="mb-4 ">
         <p className="font-semibold text-xl my-4">Folders</p>
-        <div className="grid grid-cols-8 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
           <FolderComponent folderName="Dossier 1" onClick={() => {}} />
           <FolderComponent folderName="Dossier 1" onClick={() => {}} />
           <FolderComponent folderName="Dossier 1" onClick={() => {}} />
@@ -24,7 +24,7 @@ export const FileExplorerLayout = () => {
       </div>
       <div>
         <p className="font-semibold text-xl my-4">Files</p>
-        <div className="grid grid-cols-8 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
           <FileComponent
             fileName="Fichier 1"
             onClick={() => {}}

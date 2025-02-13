@@ -21,7 +21,7 @@ const FolderComponent: React.FC<FolderProps> = ({ folderName, onClick }) => {
         <Folder strokeWidth={1} />
       </div>
       <div>
-        <p>{folderName}</p>
+        <p className="whitespace-nowrap">{folderName}</p>
       </div>
       <div className="flex group-hover:bg-gray-300 bg-gray-200 hover:bg-gray-400 rounded-full transition-colors duration-200">
         <Popover>
