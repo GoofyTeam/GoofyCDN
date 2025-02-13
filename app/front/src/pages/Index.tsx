@@ -1,3 +1,4 @@
+import FolderComponent from "@/components/folder";
 import { SiteHeader } from "@/components/header";
 import { useNavigate } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
@@ -41,6 +42,13 @@ const Index: React.FC = () => {
         >
           Déconnexion
         </button>
+
+        <FolderComponent
+          folderName="Documents"
+          onClick={function (): void {
+            throw new Error("Function not implemented.");
+          }}
+        />
       </div>
     </div>
   );
