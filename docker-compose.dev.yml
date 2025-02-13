@@ -1,0 +1,98 @@
+services:
+  cdn:
+    build:
+      context: .
+      dockerfile: docker/cdn/Dockerfile.dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./app/CDN:/app
+    networks:
+      - goofy-network
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/back/Dockerfile.dev
+    ports:
+      - "8082:8080"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+      - GIN_MODE=debug
+    volumes:
+      - ./app/back:/app
+    networks:
+      - goofy-network
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - goofy-network
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - goofy-network
+    volumes:
+      - redis-data:/data
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus:/etc/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - goofy-network
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./config/alertmanager:/etc/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    networks:
+      - goofy-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=false
+    volumes:
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    networks:
+      - goofy-network
+    depends_on:
+      - prometheus
+
+networks:
+  goofy-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:
+  redis-data:
+  grafana-data:
