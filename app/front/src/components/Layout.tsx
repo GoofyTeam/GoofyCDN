@@ -22,7 +22,7 @@ const Layout: React.FC = () => {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/">Accueille</BreadcrumbLink>
+              <BreadcrumbLink href="/">Accueil</BreadcrumbLink>
             </BreadcrumbItem>
             {pathnames.map((value, index) => {
               const to = `/${pathnames.slice(0, index + 1).join("/")}`;

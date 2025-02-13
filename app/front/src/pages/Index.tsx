@@ -21,12 +21,6 @@ const Index: React.FC = () => {
     <div className="min-h-screen">
       <SiteHeader />
       <div className="p-4">
-        <FolderComponent
-          folderName="Documents"
-          onClick={function (): void {
-            throw new Error("Function not implemented.");
-          }}
-        />
         <FileComponent
           fileName={fileData.fileName}
           fileSize={fileData.fileSize}
