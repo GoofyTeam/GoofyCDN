@@ -28,6 +28,9 @@ export const FileExplorerLayout = () => {
           throw new Error("Erreur lors de la récupération des dossiers");
         }
         const data = await response.json();
+        if (!Array.isArray(data)) {
+          throw new Error("Les données reçues ne sont pas valides");
+        }
         setFolders(data);
       } catch (error) {
         setError("Erreur lors de la récupération des dossiers");
@@ -45,6 +48,9 @@ export const FileExplorerLayout = () => {
         <p className="font-semibold text-xl my-4">Folders</p>
         {loading && <p>Chargement des dossiers...</p>}
         {error && <p className="text-red-500">{error}</p>}
+        {!loading && !error && folders.length === 0 && (
+          <p className="text-gray-500">Aucun dossier existant</p>
+        )}
         <div className="grid grid-cols-8 gap-4">
           {folders.map((folder) => (
             <FolderComponent
