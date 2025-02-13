@@ -60,7 +60,10 @@ export function SiteHeader() {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: folderName }),
+        body: JSON.stringify({
+          name: folderName,
+          ...(folderPath ? { parent_id: folderPath } : {}),
+        }),
       });
 
       if (!response.ok) {

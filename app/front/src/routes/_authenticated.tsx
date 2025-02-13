@@ -3,7 +3,6 @@ import Layout from "@/components/Layout";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: ({ context, location }) => {
-    console.log(context);
     if (!context.auth.isAuthenticated) {
       throw redirect({
         to: "/login",

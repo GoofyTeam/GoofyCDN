@@ -3,6 +3,7 @@ import {
   Download,
   File as FileIcon,
   SquareArrowOutUpRight,
+  Trash,
 } from "lucide-react";
 import {
   Dialog,
@@ -14,6 +15,7 @@ import {
 } from "./ui/dialog";
 import useAuth from "@/hooks/useAuth";
 import { Button } from "./ui/button";
+import { useRouter } from "@tanstack/react-router";
 
 interface FileProps {
   id: string;
@@ -43,7 +45,9 @@ const FileComponent: React.FC<FileProps> = ({
   createdAt,
   onClick,
 }) => {
+  const router = useRouter();
   const { accessToken } = useAuth();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [fileUrl, setFileUrl] = useState<string | undefined>(undefined);
 
@@ -130,6 +134,28 @@ const FileComponent: React.FC<FileProps> = ({
             }}
           >
             <Download /> Download
+          </Button>
+          <Button
+            variant="outline"
+            className="text-red-500"
+            onClick={async () => {
+              const response = await fetch(
+                `http://localhost:8082/api/files/${id}`,
+                {
+                  method: "DELETE",
+                  headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                  },
+                }
+              );
+              if (!response.ok) {
+                throw new Error("Erreur lors de la suppression du fichier");
+              }
+              router.invalidate();
+              setIsDialogOpen(false);
+            }}
+          >
+            <Trash /> Delete
           </Button>
         </div>
       </DialogContent>
