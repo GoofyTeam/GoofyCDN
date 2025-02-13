@@ -3,6 +3,7 @@ import FileComponent from "@/components/file";
 import FolderComponent from "@/components/folder";
 import useAuth from "@/hooks/useAuth";
 
+
 interface FolderItem {
   id: string;
   name: string;
