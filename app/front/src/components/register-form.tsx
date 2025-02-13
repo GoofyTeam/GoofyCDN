@@ -1,16 +1,59 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "@tanstack/react-router";
+import React from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function RegisterForm({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<"form">) {
+export function RegisterForm(props: React.ComponentPropsWithoutRef<"form">) {
+  const navigate = useNavigate();
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    console.log("Formulaire soumis");
+
+    // Récupération des valeurs du formulaire
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    console.log("Email saisi :", email);
+    console.log("Mot de passe saisi :", password);
+
+    try {
+      console.log("Envoi de la requête API pour l'inscription");
+      const response = await fetch("http://localhost:8080/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          Email: email,
+          Password: password,
+        }),
+      });
+      console.log("Réponse API reçue :", response);
+      console.log("Statut de la réponse :", response.status);
+
+      if (!response.ok) {
+        console.error("L'inscription a échoué");
+        // Ici, vous pouvez afficher un message d'erreur à l'utilisateur
+        return;
+      }
+
+      console.log("Inscription réussie !");
+      console.log("Redirection vers la page de connexion");
+      navigate({ to: "/login" });
+    } catch (error) {
+      console.error("Erreur lors de l'inscription :", error);
+    }
+  };
+
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <form
+      onSubmit={handleSubmit}
+      className={cn("flex flex-col gap-6")}
+      {...props}
+    >
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold">Create your account</h1>
         <p className="text-balance text-sm text-muted-foreground">
@@ -43,66 +86,5 @@ export function RegisterForm({
         </Link>
       </div>
     </form>
-  );
-}
-
-export default function RegisterPage() {
-  const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    console.log("[Register] Form submitted");
-    setError(null);
-    setLoading(true);
-
-    const formData = new FormData(event.currentTarget);
-    const email = formData.get("email");
-    const password = formData.get("password");
-    console.log("[Register] Collected data:", { email, password });
-
-    try {
-      console.log(
-        "[Register] Sending request to http://localhost:8082/register"
-      );
-      const response = await fetch("http://localhost:8082/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // Attention : l'API attend "Email" et "Password" avec une majuscule
-        body: JSON.stringify({ Email: email, Password: password }),
-      });
-
-      console.log("[Register] Response received with status:", response.status);
-      if (response.status === 200) {
-        const data = await response.json();
-        console.log("[Register] Registration successful:", data);
-        console.log("[Register] Redirecting to '/login'");
-        navigate({ to: "/login" });
-      } else {
-        const errorData = await response.json();
-        console.error(
-          "[Register] Registration failed. Status:",
-          response.status,
-          "Error data:",
-          errorData
-        );
-        throw new Error(errorData.message || "Registration failed");
-      }
-    } catch (err: any) {
-      console.error("[Register] Error caught during registration:", err);
-      setError(err.message || "An error occurred during registration");
-    } finally {
-      setLoading(false);
-      console.log("[Register] Registration process completed");
-    }
-  }
-
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <RegisterForm onSubmit={handleSubmit} />
-      {loading && <p className="mt-4">Loading...</p>}
-      {error && <p className="mt-4 text-red-500">{error}</p>}
-    </div>
   );
 }
