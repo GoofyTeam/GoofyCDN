@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"app/internal/models"
+	"errors"
 	"net/http"
 	"path"
 	"strings"
@@ -96,16 +97,20 @@ func (h *FolderHandler) CreateFolder(c *gin.Context) {
 
 // ListFolderContents liste le contenu d'un dossier
 func (h *FolderHandler) ListFolderContents(c *gin.Context) {
-	folderName := c.Param("name")
-	userID, _ := c.Get("user_id")
-	userIDObj := userID.(primitive.ObjectID)
+	folderID := c.Param("id")
+	if folderID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "l'ID du dossier est requis"})
+		return
+	}
 
-	// Récupération du dossier par son nom
+	objectID, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de dossier invalide"})
+		return
+	}
+
 	var folder models.Folder
-	err := h.folderCollection.FindOne(c, bson.M{
-		"name": folderName,
-		"user_id": userIDObj,
-	}).Decode(&folder)
+	err = h.folderCollection.FindOne(c, bson.M{"_id": objectID}).Decode(&folder)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Folder not found"})
@@ -119,7 +124,7 @@ func (h *FolderHandler) ListFolderContents(c *gin.Context) {
 	var folders []models.Folder
 	folderCursor, err := h.folderCollection.Find(c, bson.M{
 		"parent_id": folder.ID,
-		"user_id":   userIDObj,
+		"user_id":   folder.UserID,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list folders"})
@@ -134,7 +139,7 @@ func (h *FolderHandler) ListFolderContents(c *gin.Context) {
 	var files []models.File
 	fileCursor, err := h.fileCollection.Find(c, bson.M{
 		"folder_id": folder.ID,
-		"user_id":   userIDObj,
+		"user_id":   folder.UserID,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list files"})
@@ -186,16 +191,21 @@ func (h *FolderHandler) ListAllFolders(c *gin.Context) {
 
 // DeleteFolder supprime un dossier et son contenu
 func (h *FolderHandler) DeleteFolder(c *gin.Context) {
-	folderName := c.Param("name")
-	userID, _ := c.Get("user_id")
-	userIDObj := userID.(primitive.ObjectID)
+	folderID := c.Param("id")
+	if folderID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "l'ID du dossier est requis"})
+		return
+	}
 
-	// Récupération du dossier par son nom
+	objectID, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de dossier invalide"})
+		return
+	}
+
+	// Récupération du dossier par son ID
 	var folder models.Folder
-	err := h.folderCollection.FindOne(c, bson.M{
-		"name": folderName,
-		"user_id": userIDObj,
-	}).Decode(&folder)
+	err = h.folderCollection.FindOne(c, bson.M{"_id": objectID}).Decode(&folder)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Folder not found"})
@@ -212,7 +222,7 @@ func (h *FolderHandler) DeleteFolder(c *gin.Context) {
 	}
 
 	// Suppression récursive des sous-dossiers et fichiers
-	if err := h.deleteSubFoldersAndFiles(c, folder.ID, userIDObj); err != nil {
+	if err := h.deleteSubFoldersAndFiles(c, folder.ID, folder.UserID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete folder contents"})
 		return
 	}
@@ -220,7 +230,7 @@ func (h *FolderHandler) DeleteFolder(c *gin.Context) {
 	// Suppression du dossier lui-même
 	_, err = h.folderCollection.DeleteOne(c, bson.M{
 		"_id": folder.ID,
-		"user_id": userIDObj,
+		"user_id": folder.UserID,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete folder"})
@@ -249,4 +259,55 @@ func (h *FolderHandler) deleteSubFoldersAndFiles(c *gin.Context, folderID primit
 	}
 
 	return nil
+}
+
+func (h *FolderHandler) getFolderByName(c *gin.Context, folderName string) (*models.Folder, error) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		return nil, errors.New("user ID not found in context")
+	}
+
+	userIDObj, ok := userID.(primitive.ObjectID)
+	if !ok {
+		return nil, errors.New("invalid user ID type")
+	}
+
+	var folder models.Folder
+	err := h.folderCollection.FindOne(c, bson.M{
+		"name":    folderName,
+		"user_id": userIDObj,
+	}).Decode(&folder)
+	if err != nil {
+		return nil, err
+	}
+
+	return &folder, nil
+}
+
+// GetFolderByIdHandler récupère les informations d'un dossier par son ID
+func (h *FolderHandler) GetFolderByIdHandler(c *gin.Context) {
+	folderID := c.Param("id")
+	if folderID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "l'ID du dossier est requis"})
+		return
+	}
+
+	objectID, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de dossier invalide"})
+		return
+	}
+
+	var folder models.Folder
+	err = h.folderCollection.FindOne(c, bson.M{"_id": objectID}).Decode(&folder)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			c.JSON(http.StatusNotFound, gin.H{"error": "dossier non trouvé"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, folder)
 }
