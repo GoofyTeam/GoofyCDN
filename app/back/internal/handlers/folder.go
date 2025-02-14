@@ -2,15 +2,15 @@ package handlers
 
 import (
 	"app/internal/models"
-	"gi
+	"net/http"
+	"path"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"net/http"
-	"path"
-	"strings"
-	"app/internal/models"
 )
 
 type FolderHandler struct {
@@ -45,7 +45,7 @@ func (h *FolderHandler) CreateFolder(c *gin.Context) {
 
 	// Vérification que le nom du dossier n'existe pas déjà pour cet utilisateur
 	var existingFolder models.Folder
-		"name":    folder.Name,
+	err := h.folderCollection.FindOne(c, bson.M{
 		"name": folder.Name,
 		"user_id": folder.UserID,
 	}).Decode(&existingFolder)
@@ -102,7 +102,7 @@ func (h *FolderHandler) ListFolderContents(c *gin.Context) {
 
 	// Récupération du dossier par son nom
 	var folder models.Folder
-		"name":    folderName,
+	err := h.folderCollection.FindOne(c, bson.M{
 		"name": folderName,
 		"user_id": userIDObj,
 	}).Decode(&folder)
@@ -192,7 +192,7 @@ func (h *FolderHandler) DeleteFolder(c *gin.Context) {
 
 	// Récupération du dossier par son nom
 	var folder models.Folder
-		"name":    folderName,
+	err := h.folderCollection.FindOne(c, bson.M{
 		"name": folderName,
 		"user_id": userIDObj,
 	}).Decode(&folder)
@@ -218,7 +218,7 @@ func (h *FolderHandler) DeleteFolder(c *gin.Context) {
 	}
 
 	// Suppression du dossier lui-même
-		"_id":     folder.ID,
+	_, err = h.folderCollection.DeleteOne(c, bson.M{
 		"_id": folder.ID,
 		"user_id": userIDObj,
 	})
@@ -232,7 +232,7 @@ func (h *FolderHandler) DeleteFolder(c *gin.Context) {
 
 func (h *FolderHandler) deleteSubFoldersAndFiles(c *gin.Context, folderID primitive.ObjectID, userID primitive.ObjectID) error {
 	// Suppression récursive des sous-dossiers et fichiers
-		"path":    bson.M{"$regex": "^" + folderID.Hex() + "/"},
+	_, err := h.folderCollection.DeleteMany(c, bson.M{
 		"path": bson.M{"$regex": "^" + folderID.Hex() + "/"},
 		"user_id": userID,
 	})
