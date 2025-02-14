@@ -27,7 +27,7 @@ jobs:
           go test -v ./...
 
       - name: Test CDN
-        working-directory: ./app/CDN
+        working-directory: ./app/cdn
         continue-on-error: true
         run: |
           go mod tidy
