@@ -8,9 +8,6 @@ interface FolderItem {
 }
 
 interface FileObject {
-  created_at: string;
-  mime_type: string;
-  size: number;
   // Définissez ici les propriétés de vos fichiers
   id: string;
   name: string;
@@ -51,7 +48,7 @@ export const Route = createFileRoute("/_authenticated/drive/")({
 
     // 3. Faire l'appel vers l'API pour récupérer les fichiers du dossier root
     const folderDataResponse = await fetch(
-      `http://localhost:8082/api/folders/${rootFolder.name}`,
+      `http://localhost:8082/api/folders/${rootFolder.id}`,
       {
         method: "GET",
         headers: {

@@ -21,8 +21,8 @@ export const FileExplorerLayout = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const handleDeleteFolder = (folderName: string) => {
-    const folderToDelete = folders.find((folder) => folder.name === folderName);
+  const handleDeleteFolder = (folderId: string) => {
+    const folderToDelete = folders.find((folder) => folder.id === folderId);
     router.invalidate();
     toast({
       title: "Delete Folder",
@@ -71,9 +71,10 @@ export const FileExplorerLayout = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
               {filteredFolders.map((folder) => (
                 <FolderComponent
-                  key={folder.name}
+                  key={folder.id}
                   folderName={folder.name}
                   onDelete={handleDeleteFolder}
+                  folderId={folder.id}
                 />
               ))}
             </div>

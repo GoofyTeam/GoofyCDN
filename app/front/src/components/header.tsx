@@ -81,7 +81,7 @@ export function SiteHeader() {
         if (!rootFolder) {
           throw new Error("Le dossier root n'a pas été trouvé");
         }
-        parentId = rootFolder.name;
+        parentId = rootFolder.id;
       } catch (error) {
         console.error(error);
         return;
@@ -127,8 +127,8 @@ export function SiteHeader() {
       return;
     }
 
-    let currentfolderName = folderPath;
-    if (!currentfolderName) {
+    let currentFolderId = folderPath;
+    if (!currentFolderId) {
       try {
         const foldersResponse = await fetch(
           "http://localhost:8082/api/folders",
@@ -154,7 +154,7 @@ export function SiteHeader() {
           throw new Error("Le dossier root n'a pas été trouvé");
         }
 
-        currentfolderName = rootFolder.name;
+        currentFolderId = rootFolder.id;
       } catch (error) {
         console.error(error);
         return;
@@ -163,7 +163,7 @@ export function SiteHeader() {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("folder_id", currentfolderName);
+    formData.append("folder_id", currentFolderId);
 
     console.log("Fichier sélectionné", file);
 
@@ -236,12 +236,7 @@ export function SiteHeader() {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleNewFile} className="flex gap-4">
-              <Input
-                name="file"
-                type="file"
-                placeholder="File name"
-                className="cursor-pointer"
-              />
+              <Input name="file" type="file" placeholder="File name" />
               <Button type="submit">Save file</Button>
             </form>
           </DialogContent>

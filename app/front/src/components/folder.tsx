@@ -11,16 +11,22 @@ import { Button } from "./ui/button";
 import { Link } from "@tanstack/react-router";
 
 interface FolderProps {
+  key: string;
   folderName: string;
-  onDelete: (folderName: string) => void;
+  folderId: string;
+  onDelete: (folderId: string) => void;
 }
 
-const FolderComponent: React.FC<FolderProps> = ({ folderName, onDelete }) => {
+const FolderComponent: React.FC<FolderProps> = ({
+  folderName,
+  folderId,
+  onDelete,
+}) => {
   const { accessToken } = useAuth();
   const handleDelete = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8082/api/folders/${folderName}`,
+        `http://localhost:8082/api/folders/${folderId}`,
         {
           method: "DELETE",
           headers: {
@@ -32,7 +38,7 @@ const FolderComponent: React.FC<FolderProps> = ({ folderName, onDelete }) => {
       if (!response.ok) {
         throw new Error("Erreur lors de la suppression du dossier");
       }
-      onDelete(folderName);
+      onDelete(folderId);
     } catch (error) {
       console.error(error);
     }
@@ -42,7 +48,7 @@ const FolderComponent: React.FC<FolderProps> = ({ folderName, onDelete }) => {
     <div className="cursor-pointer group py-4 px-2 rounded-lg justify-between transition-colors duration-200 flex w-full gap-2 bg-gray-50 hover:bg-gray-100 ">
       <Link
         /* @ts-expect-error - tanstack il sait pas mais nous on se sait */
-        to={`/drive/${folderName}`}
+        to={`/drive/${folderId}`}
         className="flex w-full gap-2"
       >
         <div>
