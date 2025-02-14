@@ -27,7 +27,6 @@ interface FileProps {
   fileSize: number;
   mimeType: string;
   createdAt: string;
-  updatedAt: string;
   onClick?: () => void;
 }
 
