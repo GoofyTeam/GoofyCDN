@@ -21,15 +21,13 @@ const Layout: React.FC = () => {
       <div className="w-full py-8 px-8 sm:px-12 lg:px-20">
         <Breadcrumb>
           <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/">Accueil</BreadcrumbLink>
-            </BreadcrumbItem>
             {pathnames.map((value, index) => {
               const to = `/${pathnames.slice(0, index + 1).join("/")}`;
               const isLast = index === pathnames.length - 1;
               return (
                 <React.Fragment key={to}>
-                  <BreadcrumbSeparator />
+                  {index !== 0 && <BreadcrumbSeparator />}{" "}
+                  {/* Ajout de la condition pour éviter le séparateur avant le premier élément */}
                   <BreadcrumbItem>
                     <BreadcrumbLink
                       href={to}
