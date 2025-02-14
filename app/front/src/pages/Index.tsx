@@ -1,9 +1,11 @@
+import { SiteHeader } from "@/components/header";
 import React from "react";
 
 const Index: React.FC = () => {
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <h1 className="text-3xl font-bold">Welcome to Index</h1>
+    <div className="min-h-screen">
+      <SiteHeader />
+      <div className="p-4">page de test</div>
     </div>
   );
 };
