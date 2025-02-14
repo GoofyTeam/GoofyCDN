@@ -32,7 +32,7 @@ Ce projet implémente un Content Delivery Network (CDN) en Go, conçu pour optim
 1. **Mode Développement** :
 
 ```bash
-docker compose up app-dev
+docker compose -f .\docker-compose.dev.yml up -d
 ```
 
 - Hot-reload activé
@@ -42,14 +42,22 @@ docker compose up app-dev
 2. **Mode Production** :
 
 ```bash
-docker compose up app-prod
+docker compose -f .\docker-compose.prod.yml up -d
 ```
 
 - Optimisé pour la production
 - Accessible sur http://localhost:8081
 - Métriques sur http://localhost:8081/metrics
 
-3. **Services additionnels** :
+3. **Lancement du front** :
+
+```bash
+cd front
+npm install
+npm run dev
+```
+
+4. **Services additionnels** :
 
 - Grafana : http://localhost:3000 (admin/admin)
 - Prometheus : http://localhost:9090
@@ -59,13 +67,28 @@ docker compose up app-prod
 
 ```
 app/
-├── internal/
-│   ├── cache/          # Implémentation du cache (LRU, Redis)
-│   ├── loadbalancer/   # Algorithmes de load balancing
-│   └── middleware/     # Middlewares (sécurité, métriques)
-├── pkg/
-│   └── config/         # Configuration de l'application
-└── main.go            # Point d'entrée de l'application
+├── back/
+│   └── internal/
+│       ├── api/            # Endpoints API
+│       ├── loadbalancer/   # Algorithmes de load balancing
+│       └── middleware/     # Middlewares (sécurité, métriques)
+|
+├── CDN/
+│   └── config/             # Configuration de l'application
+│   └── internal/           # Implémentation du CDN
+│   └── docs/               # Documentation de l'API
+|   └── main.go             # Point d'entrée de l'application
+|
+└── front/
+    └── public/             # Fichiers statiques
+    └── src/
+        ├── assets/         # Images, etc.
+        ├── components/     # Composants React
+        ├── hooks/          # Hooks personnalisés
+        ├── libs/           # Fonctions utilitaires
+        ├── pages/          # Pages de l'application
+        └── routes/         # Routes de l'application par TanStack-Router
+
 ```
 
 ## 🔍 Fonctionnement Détaillé
@@ -73,6 +96,7 @@ app/
 ### 1. Système de Cache
 
 - **Cache LRU** (`internal/cache/cache.go`) :
+
   - Implémente l'interface `Cache`
   - Utilise `hashicorp/golang-lru` pour la gestion du cache en mémoire
   - Limite configurable de la taille du cache
@@ -96,16 +120,20 @@ app/
 ### 3. Endpoints API
 
 #### Backend Service (port 8080)
+
 - **Authentification** :
+
   - `POST /register` : Inscription d'un nouvel utilisateur
   - `POST /login` : Connexion utilisateur
 
 - **Gestion des Fichiers** (requiert authentification) :
+
   - `POST /api/files` : Upload d'un fichier
   - `GET /api/files/:id` : Récupération d'un fichier
   - `DELETE /api/files/:id` : Suppression d'un fichier
 
 - **Gestion des Dossiers** (requiert authentification) :
+
   - `POST /api/folders` : Création d'un dossier
   - `GET /api/folders/:id` : Liste du contenu d'un dossier
   - `DELETE /api/folders/:id` : Suppression d'un dossier
@@ -114,7 +142,9 @@ app/
   - `GET /health` : Vérification de l'état du service
 
 #### CDN Service (port 8080)
+
 - **Cache** :
+
   - `POST /cache/purge` : Vide le cache
   - Note : Seules les requêtes GET sont mises en cache
 
@@ -126,6 +156,7 @@ app/
 ### 4. Monitoring
 
 - **Métriques** :
+
   - Temps de réponse des requêtes
   - Nombre de requêtes par endpoint
   - Taux de succès/erreur
@@ -275,11 +306,13 @@ Vérifier que le rôle IAM a les bonnes politiques :
 ## 🖥 Déploiement Local avec Docker Desktop
 
 ### Prérequis
+
 - Docker Desktop installé
 - Kubernetes activé dans Docker Desktop (avec kubeadm)
 - kubectl installé (`brew install kubectl`)
 
 ### 1. Configuration de Kubernetes dans Docker Desktop
+
 1. Ouvrir Docker Desktop
 2. Aller dans Settings > Kubernetes
 3. Sélectionner "Enable Kubernetes"
@@ -287,6 +320,7 @@ Vérifier que le rôle IAM a les bonnes politiques :
 5. Cliquer sur "Apply & Restart"
 
 ### 2. Construction de l'Image
+
 ```bash
 # Construire l'image localement
 docker build -t goofy-cdn:local -f docker/cdn/Dockerfile .
@@ -295,6 +329,7 @@ docker build -t goofy-cdn:local -f docker/cdn/Dockerfile .
 ### 3. Déploiement sur Kubernetes Local
 
 1. **Vérifier que kubectl utilise le bon contexte** :
+
 ```bash
 # Voir les contextes disponibles
 kubectl config get-contexts
@@ -304,6 +339,7 @@ kubectl config use-context docker-desktop
 ```
 
 2. **Déployer l'application** :
+
 ```bash
 # Appliquer les configurations
 kubectl apply -f k8s/cdn-deployment.yaml
@@ -317,6 +353,7 @@ kubectl get services
 ### 4. Accès à l'Application
 
 L'application est accessible via les endpoints suivants :
+
 - **URL Principale** : `http://localhost:80`
 - **Métriques** : `http://localhost:80/metrics`
 - **Health Check** : `http://localhost:80/health`
@@ -342,6 +379,7 @@ kubectl delete -f k8s/cdn-service.yaml
 ### 6. Troubleshooting
 
 #### Pod en CrashLoopBackOff ou Error
+
 ```bash
 # Voir les logs du pod
 kubectl logs -l app=goofy-cdn
@@ -351,22 +389,28 @@ kubectl describe pod -l app=goofy-cdn
 ```
 
 #### Service inaccessible
+
 1. Vérifier que le service est bien créé :
+
 ```bash
 kubectl get services
 ```
 
 2. Vérifier que le pod est Ready :
+
 ```bash
 kubectl get pods -l app=goofy-cdn
 ```
 
 3. Voir les endpoints :
+
 ```bash
 kubectl get endpoints goofy-cdn-service
 ```
 
 #### Problèmes d'image
+
 Si l'image n'est pas trouvée, assurez-vous que :
+
 1. L'image est bien construite localement : `docker images | grep goofy-cdn`
 2. Le fichier deployment.yaml utilise le bon nom d'image : `image: goofy-cdn:local`
