@@ -44,19 +44,21 @@ const FolderComponent: React.FC<FolderProps> = ({
   };
 
   return (
-    <Link
-      /* @ts-expect-error - tanstack il sait pas mais nous on se sait */
-      to={`/drive/${folderId}`}
-      className="cursor-pointer group py-4 px-2 rounded-lg justify-between transition-colors duration-200 flex w-full gap-2 bg-gray-50 hover:bg-gray-100 "
-    >
-      <div>
-        <Folder strokeWidth={1} />
-      </div>
-      <div className="overflow-hidden max-w-xs w-full">
-        <p className="whitespace-nowrap overflow-hidden text-ellipsis w-full">
-          {folderName}
-        </p>
-      </div>
+    <div className="cursor-pointer group py-4 px-2 rounded-lg justify-between transition-colors duration-200 flex w-full gap-2 bg-gray-50 hover:bg-gray-100 ">
+      <Link
+        /* @ts-expect-error - tanstack il sait pas mais nous on se sait */
+        to={`/drive/${folderId}`}
+        className="flex w-full gap-2"
+      >
+        <div>
+          <Folder strokeWidth={1} />
+        </div>
+        <div className="overflow-hidden max-w-xs w-full">
+          <p className="whitespace-nowrap overflow-hidden text-ellipsis w-full">
+            {folderName}
+          </p>
+        </div>
+      </Link>
       <div className="flex  group-hover:bg-gray-100 bg-gray-50 hover:bg-gray-300 rounded-full transition-colors duration-200">
         <Popover>
           <PopoverTrigger className="cursor-pointer">
@@ -76,7 +78,7 @@ const FolderComponent: React.FC<FolderProps> = ({
           </PopoverContent>
         </Popover>
       </div>
-    </Link>
+    </div>
   );
 };
 

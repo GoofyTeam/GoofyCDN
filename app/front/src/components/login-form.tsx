@@ -21,8 +21,6 @@ export function LoginForm({
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    console.log("Email saisi :", email);
-    console.log("Mot de passe saisi :", password);
 
     try {
       console.log("Envoi de la requête API pour le login");
@@ -55,7 +53,7 @@ export function LoginForm({
       }
 
       console.log("Redirection vers la page d'accueil");
-      navigate({ to: "/" });
+      navigate({ to: "/drive" });
     } catch (error) {
       console.error("Erreur lors du login :", error);
     }
