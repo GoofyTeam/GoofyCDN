@@ -17,9 +17,9 @@ spec:
     spec:
       containers:
         - name: cdn
-          image: localhost:5000/goofy-cdn:latest
+          image: misterzapp/goofy-cdn:latest
           ports:
-            - containerPort: 8081
+            - containerPort: 8080
           env:
             - name: MONGODB_URI
               valueFrom:
@@ -41,13 +41,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 8081
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /health
-              port: 8081
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
       imagePullSecrets:
