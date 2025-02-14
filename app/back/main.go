@@ -77,8 +77,9 @@ func main() {
 		// Gestion des dossiers
 		protected.GET("/folders", folderHandler.ListAllFolders)
 		protected.POST("/folders", folderHandler.CreateFolder)
-		protected.GET("/folders/:name", folderHandler.ListFolderContents)
-		protected.DELETE("/folders/:name", folderHandler.DeleteFolder)
+		protected.GET("/folders/id/:id", folderHandler.GetFolderByIdHandler)
+		protected.GET("/folders/:id", folderHandler.ListFolderContents)
+		protected.DELETE("/folders/:id", folderHandler.DeleteFolder)
 
 		// Gestion des fichiers
 		protected.POST("/files", fileHandler.UploadFile)

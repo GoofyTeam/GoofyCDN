@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: goofy-cdn-front:latest
+          image: misterzapp/goofy-cdn-front:latest
           ports:
             - containerPort: 80
 ---
@@ -24,10 +24,13 @@ kind: Service
 metadata:
   name: frontend-service
   namespace: goofy-cdn
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
 spec:
   selector:
     app: frontend
   ports:
     - port: 80
       targetPort: 80
-  type: ClusterIP
+  type: LoadBalancer

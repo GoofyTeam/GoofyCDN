@@ -81,7 +81,7 @@ export function SiteHeader() {
         if (!rootFolder) {
           throw new Error("Le dossier root n'a pas été trouvé");
         }
-        parentId = rootFolder.id;
+        parentId = rootFolder.name;
       } catch (error) {
         console.error(error);
         return;
@@ -127,8 +127,8 @@ export function SiteHeader() {
       return;
     }
 
-    let currentFolderId = folderPath;
-    if (!currentFolderId) {
+    let currentfolderName = folderPath;
+    if (!currentfolderName) {
       try {
         const foldersResponse = await fetch(
           "http://localhost:8082/api/folders",
@@ -154,7 +154,7 @@ export function SiteHeader() {
           throw new Error("Le dossier root n'a pas été trouvé");
         }
 
-        currentFolderId = rootFolder.id;
+        currentfolderName = rootFolder.name;
       } catch (error) {
         console.error(error);
         return;
@@ -163,7 +163,7 @@ export function SiteHeader() {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("folder_id", currentFolderId);
+    formData.append("folder_id", currentfolderName);
 
     console.log("Fichier sélectionné", file);
 

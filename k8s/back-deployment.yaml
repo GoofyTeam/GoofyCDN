@@ -19,7 +19,7 @@ spec:
           ports:
             - containerPort: 8080
           env:
-            - name: MONGODB_URI
+            - name: MONGO_URI
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
@@ -35,10 +35,13 @@ kind: Service
 metadata:
   name: backend-service
   namespace: goofy-cdn
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
 spec:
   selector:
     app: backend
   ports:
     - port: 8080
       targetPort: 8080
-  type: ClusterIP
+  type: LoadBalancer
