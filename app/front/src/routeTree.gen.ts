@@ -154,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/drive': typeof AuthenticatedDriveRouteWithChildren
   '/drive/$folderPath': typeof AuthenticatedDriveFolderPathRoute
   '/drive/': typeof AuthenticatedDriveIndexRoute
+
 }
 
 export interface FileRoutesByTo {
@@ -163,6 +164,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/drive/$folderPath': typeof AuthenticatedDriveFolderPathRoute
   '/drive': typeof AuthenticatedDriveIndexRoute
+
 }
 
 export interface FileRoutesById {
@@ -174,10 +176,12 @@ export interface FileRoutesById {
   '/_authenticated/drive': typeof AuthenticatedDriveRouteWithChildren
   '/_authenticated/drive/$folderPath': typeof AuthenticatedDriveFolderPathRoute
   '/_authenticated/drive/': typeof AuthenticatedDriveIndexRoute
+
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
+
   fullPaths:
     | '/'
     | ''
@@ -197,18 +201,21 @@ export interface FileRouteTypes {
     | '/_authenticated/drive'
     | '/_authenticated/drive/$folderPath'
     | '/_authenticated/drive/'
+
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
@@ -234,16 +241,19 @@ export const routeTree = rootRoute
       "filePath": "index.tsx"
     },
     "/_authenticated": {
+
       "filePath": "_authenticated.tsx",
       "children": [
         "/_authenticated/drive"
       ]
+
     },
     "/login": {
       "filePath": "login.tsx"
     },
     "/register": {
       "filePath": "register.tsx"
+
     },
     "/_authenticated/drive": {
       "filePath": "_authenticated/drive.tsx",
@@ -260,6 +270,7 @@ export const routeTree = rootRoute
     "/_authenticated/drive/": {
       "filePath": "_authenticated/drive/index.tsx",
       "parent": "/_authenticated/drive"
+
     }
   }
 }

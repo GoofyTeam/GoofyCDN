@@ -1,9 +1,10 @@
 package middleware
 
 import (
-	"github.com/gin-gonic/gin"
 	"os"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -39,11 +40,16 @@ func getAllowedOrigins() []string {
 	if gin.Mode() == gin.DebugMode {
 		return []string{
 			"http://localhost:5173",    // Vite dev server
+			"http://localhost:5174",    // Vite dev server
+			"http://localhost:5175",    // Vite dev server
 			"http://localhost:3000",    // Autre port courant
+			"http://localhost:3001",    // Autre port courant
 			"http://localhost:8080",    // Backend
+			"http://localhost",    // Backend
 			"http://127.0.0.1:5173",
 			"http://127.0.0.1:3000",
 			"http://127.0.0.1:8080",
+			"http://127.0.0.1",
 		}
 	}
 
