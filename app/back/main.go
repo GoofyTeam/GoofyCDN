@@ -5,6 +5,7 @@ import (
 	"app/internal/handlers"
 	"app/internal/middleware"
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -77,8 +78,8 @@ func main() {
 		// Gestion des dossiers
 		protected.GET("/folders", folderHandler.ListAllFolders)
 		protected.POST("/folders", folderHandler.CreateFolder)
-		protected.GET("/folders/:id", folderHandler.ListFolderContents)
-		protected.DELETE("/folders/:id", folderHandler.DeleteFolder)
+		protected.GET("/folders/:name", folderHandler.ListFolderContents)
+		protected.DELETE("/folders/:name", folderHandler.DeleteFolder)
 
 		// Gestion des fichiers
 		protected.POST("/files", fileHandler.UploadFile)
@@ -97,9 +98,9 @@ func main() {
 	server := &http.Server{
 		Addr:         "0.0.0.0:" + port,
 		Handler:      r,
-		ReadTimeout:  30 * time.Second,    // Augmente le timeout de lecture
-		WriteTimeout: 30 * time.Second,    // Augmente le timeout d'écriture
-		IdleTimeout:  120 * time.Second,   // Augmente le timeout d'inactivité
+		ReadTimeout:  30 * time.Second,  // Augmente le timeout de lecture
+		WriteTimeout: 30 * time.Second,  // Augmente le timeout d'écriture
+		IdleTimeout:  120 * time.Second, // Augmente le timeout d'inactivité
 	}
 
 	log.Printf("Serveur démarré sur le port %s", port)
