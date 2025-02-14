@@ -1,8 +1,20 @@
 # CDN Go - Projet de Content Delivery Network
 
+## Membres :
+
+- Brandon VO [**@Hiteazel**](https://github.com/Hiteazel)
+- Teddy GAMIETTE [**@tedjy971**](https://github.com/tedjy971)
+- Luca GROUSSET [**@lucag322**](https://github.com/lucag322)
+- Antoine AZEVEDO DA SILVA [**@DestroyCom**](https://github.com/DestroyCom)
+
 **CDN GO**  
 **Back GO**  
 **Front React** avec Vite, Tailwind, Shadcn UI, et TanStack Router
+
+## Tests
+
+On a des tests de fausses metrics pour vérifier si ils sont bien reçus dans le Grafana.
+On a des tests dans le backend pour vérifier les performances et du CDN (run_load_tests.sh dans le k6 et wrk qui doit être installé sur le PC).
 
 Vidéo de présentation : [Lien](https://youtu.be/H8DuJpxgSUk)
 Vidéo de présentation AWS : [Lien](https://youtu.be/eYFL3Z_4ShI)
