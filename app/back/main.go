@@ -5,7 +5,6 @@ import (
 	"app/internal/handlers"
 	"app/internal/middleware"
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
