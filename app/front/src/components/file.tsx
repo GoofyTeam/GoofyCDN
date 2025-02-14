@@ -4,6 +4,10 @@ import {
   File as FileIcon,
   SquareArrowOutUpRight,
   Trash,
+  Image,
+  Video,
+  FileText,
+  Music,
 } from "lucide-react";
 import {
   Dialog,
@@ -22,12 +26,11 @@ interface FileProps {
   fileName: string;
   fileSize: number;
   mimeType: string;
-  createdAt: string; // ou Date, selon ce que vous recevez
+  createdAt: string;
   updatedAt: string;
   onClick?: () => void;
 }
 
-// Fonction utilitaire pour formater la taille du fichier
 const formatBytes = (bytes: number, decimals = 2): string => {
   if (bytes === 0) return "0 Bytes";
   const k = 1024;
@@ -35,6 +38,18 @@ const formatBytes = (bytes: number, decimals = 2): string => {
   const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
+};
+
+const getFileIcon = (mimeType: string) => {
+  if (mimeType.startsWith("image/"))
+    return <Image strokeWidth={1} className="w-16 h-16" />;
+  if (mimeType.startsWith("video/"))
+    return <Video strokeWidth={1} className="w-16 h-16" />;
+  if (mimeType === "application/pdf")
+    return <FileText strokeWidth={1} className="w-16 h-16" />;
+  if (mimeType.startsWith("audio/"))
+    return <Music strokeWidth={1} className="w-16 h-16" />;
+  return <FileIcon strokeWidth={1} className="w-16 h-16" />;
 };
 
 const FileComponent: React.FC<FileProps> = ({
@@ -47,7 +62,6 @@ const FileComponent: React.FC<FileProps> = ({
 }) => {
   const router = useRouter();
   const { accessToken } = useAuth();
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [fileUrl, setFileUrl] = useState<string | undefined>(undefined);
 
@@ -83,10 +97,10 @@ const FileComponent: React.FC<FileProps> = ({
           onClick={onClick}
         >
           <div className="flex-1 flex items-center justify-center">
-            <FileIcon strokeWidth={1} className="w-16 h-16" />
+            {getFileIcon(mimeType)}
           </div>
           <div className="mt-2">
-            <p className="font-bold text-sm">{fileName}</p>
+            <p className="font-bold text-sm truncate">{fileName}</p>
             <p className="text-xs text-gray-600">{mimeType}</p>
             <p className="text-xs text-gray-600">{formatBytes(fileSize)}</p>
             <p className="text-xs text-gray-600">
@@ -124,11 +138,9 @@ const FileComponent: React.FC<FileProps> = ({
             onClick={() => {
               if (fileUrl) {
                 const a = document.createElement("a");
-
                 a.href = fileUrl;
                 a.download = fileName;
                 a.click();
-
                 URL.revokeObjectURL(fileUrl);
               }
             }}

@@ -236,7 +236,12 @@ export function SiteHeader() {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleNewFile} className="flex gap-4">
-              <Input name="file" type="file" placeholder="File name" />
+              <Input
+                name="file"
+                type="file"
+                placeholder="File name"
+                className="cursor-pointer"
+              />
               <Button type="submit">Save file</Button>
             </form>
           </DialogContent>

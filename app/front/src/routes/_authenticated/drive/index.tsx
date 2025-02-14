@@ -68,9 +68,6 @@ export const Route = createFileRoute("/_authenticated/drive/")({
     let { folders, files }: { folders: FolderItem[]; files: FileObject[] } =
       folderData;
 
-    console.log("folders", folders);
-    console.log("files", files);
-
     if (!Array.isArray(folders) || folders === null) {
       folders = [];
     }
