@@ -3,7 +3,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import useAuth from "@/hooks/useAuth";
 import { useNavigate, useParams, useRouter } from "@tanstack/react-router";
@@ -20,6 +19,11 @@ import {
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 
+interface FolderItem {
+  id: string;
+  name: string;
+}
+
 export function SiteHeader() {
   const navigate = useNavigate();
   const router = useRouter();
@@ -29,11 +33,11 @@ export function SiteHeader() {
   });
 
   const folderPath = params?.folderPath ?? undefined;
-
   const { logout, isAuthenticated, user, accessToken } = useAuth();
   const [email, setEmail] = useState<string | null>(null);
   const [folderName, setFolderName] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -53,6 +57,37 @@ export function SiteHeader() {
   const handleCreateFolder = async () => {
     if (!folderName.trim()) return;
 
+    let parentId = folderPath;
+    if (!parentId) {
+      try {
+        const foldersResponse = await fetch(
+          "http://localhost:8082/api/folders",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (!foldersResponse.ok) {
+          throw new Error("Erreur lors de la récupération des dossiers");
+        }
+        const folders = await foldersResponse.json();
+        const rootFolder = folders.find(
+          (folder: { id: string; name: string }) =>
+            folder.name.toLowerCase() === "root"
+        );
+        if (!rootFolder) {
+          throw new Error("Le dossier root n'a pas été trouvé");
+        }
+        parentId = rootFolder.id;
+      } catch (error) {
+        console.error(error);
+        return;
+      }
+    }
+
     try {
       const response = await fetch("http://localhost:8082/api/folders", {
         method: "POST",
@@ -62,7 +97,7 @@ export function SiteHeader() {
         },
         body: JSON.stringify({
           name: folderName,
-          ...(folderPath ? { parent_id: folderPath } : {}),
+          parent_id: parentId,
         }),
       });
 
@@ -71,7 +106,6 @@ export function SiteHeader() {
       }
 
       router.invalidate();
-
       console.log("Dossier créé avec succès !");
       setFolderName("");
       setIsDialogOpen(false);
@@ -83,11 +117,6 @@ export function SiteHeader() {
   const handleNewFile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!folderPath) {
-      console.error("Aucun dossier sélectionné");
-      return;
-    }
-
     const target = e.target as typeof e.target & {
       file: { files: FileList };
     };
@@ -98,9 +127,43 @@ export function SiteHeader() {
       return;
     }
 
+    let currentFolderId = folderPath;
+    if (!currentFolderId) {
+      try {
+        const foldersResponse = await fetch(
+          "http://localhost:8082/api/folders",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!foldersResponse.ok) {
+          throw new Error("Erreur lors de la récupération des dossiers");
+        }
+
+        const folders: FolderItem[] = await foldersResponse.json();
+        const rootFolder = folders.find(
+          (folder) => folder.name.toLowerCase() === "root"
+        );
+
+        if (!rootFolder) {
+          throw new Error("Le dossier root n'a pas été trouvé");
+        }
+
+        currentFolderId = rootFolder.id;
+      } catch (error) {
+        console.error(error);
+        return;
+      }
+    }
+
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("folder_id", folderPath);
+    formData.append("folder_id", currentFolderId);
 
     console.log("Fichier sélectionné", file);
 
@@ -115,11 +178,16 @@ export function SiteHeader() {
     console.log("Réponse de l'API", res);
     if (res.ok) {
       console.log("Fichier envoyé avec succès");
+      setIsFileDialogOpen(false);
       router.invalidate();
     } else {
       console.error("Erreur lors de l'envoi du fichier");
     }
   };
+
+  useEffect(() => {
+    console.log("dialog", isDialogOpen);
+  }, [isDialogOpen]);
 
   return (
     <header className="border-grid top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3 flex items-center justify-between">
@@ -154,7 +222,7 @@ export function SiteHeader() {
             </div>
           </DialogContent>
         </Dialog>
-        <Dialog>
+        <Dialog open={isFileDialogOpen} onOpenChange={setIsFileDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="outline">
               <PlusIcon /> New File

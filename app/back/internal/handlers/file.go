@@ -39,7 +39,7 @@ func (h *FileHandler) UploadFile(c *gin.Context) {
 	defer file.Close()
 
 	userID, _ := c.Get("user_id")
-	userIDObj, _ := primitive.ObjectIDFromHex(userID.(string))
+	userIDObj, _ := userID.(primitive.ObjectID)
 
 	// Récupération de l'ID du dossier parent
 	var folder models.Folder
