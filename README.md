@@ -1,11 +1,30 @@
 # CDN Go - Projet de Content Delivery Network
 
-Ce projet implémente un Content Delivery Network (CDN) en Go, conçu pour optimiser la distribution de contenu web avec des fonctionnalités avancées de mise en cache, de répartition de charge et de monitoring.
+## Membres :
+
+- Brandon VO [**@Hiteazel**](https://github.com/Hiteazel)
+- Teddy GAMIETTE [**@tedjy971**](https://github.com/tedjy971)
+- Luca GROUSSET [**@lucag322**](https://github.com/lucag322)
+- Antoine AZEVEDO DA SILVA [**@DestroyCom**](https://github.com/DestroyCom)
+
+**CDN GO**  
+**Back GO**  
+**Front React** avec Vite, Tailwind, Shadcn UI, et TanStack Router
+
+## Tests
+
+On a des tests de fausses metrics pour vérifier si ils sont bien reçus dans le Grafana.
+On a des tests dans le backend pour vérifier les performances et du CDN (run_load_tests.sh dans le k6 et wrk qui doit être installé sur le PC).
+
+Vidéo de présentation : [Lien](https://youtu.be/H8DuJpxgSUk)
+Vidéo de présentation AWS : [Lien](https://youtu.be/eYFL3Z_4ShI)
 
 ## 🚀 Fonctionnalités
 
+Prise en charge de différents types de load balancing et cache au lancement de l'application.
+
 - **Proxy HTTP** : Redirection intelligente des requêtes
-- **Système de Cache** :
+- **Système de Cache** :,
   - Cache LRU en mémoire
   - Support Redis pour le cache distribué
 - **Load Balancing** :
@@ -44,10 +63,6 @@ docker compose -f .\docker-compose.dev.yml up -d
 ```bash
 docker compose -f .\docker-compose.prod.yml up -d
 ```
-
-- Optimisé pour la production
-- Accessible sur http://localhost:8081
-- Métriques sur http://localhost:8081/metrics
 
 3. **Lancement du front** :
 
@@ -191,14 +206,6 @@ Le fichier `main.go` orchestre tous ces composants :
   - `Content-Security-Policy`
   - `Strict-Transport-Security`
 
-## 🤝 Contribution
-
-1. Fork le projet
-2. Créez votre branche (`git checkout -b feature/amazing-feature`)
-3. Committez vos changements (`git commit -m 'Add amazing feature'`)
-4. Push vers la branche (`git push origin feature/amazing-feature`)
-5. Ouvrez une Pull Request
-
 ## 🚀 Déploiement sur AWS EKS
 
 ### Prérequis AWS
@@ -225,7 +232,7 @@ docker push misterzapp/goofy-cdn:latest
 ```bash
 # Création du cluster EKS
 eksctl create cluster \
-  --name goofy-cdn-cluster \
+  --name hetic-groupe5 \
   --region eu-west-3 \
   --nodegroup-name goofy-cdn-workers \
   --node-type t3.small \
@@ -238,8 +245,7 @@ eksctl create cluster \
 
 ```bash
 # Déployer l'application
-kubectl apply -f k8s/cdn-deployment.yaml
-kubectl apply -f k8s/cdn-service.yaml
+kubectl apply -f k8s
 
 # Vérifier le déploiement
 kubectl get pods
@@ -265,10 +271,10 @@ kubectl logs -l app=goofy-cdn
 
 ```bash
 # Supprimer le nodegroup
-eksctl delete nodegroup --cluster goofy-cdn-cluster --name goofy-cdn-workers
+eksctl delete nodegroup --cluster hetic-groupe5 --name goofy-cdn-workers
 
 # Supprimer le cluster complet (arrête toute facturation)
-eksctl delete cluster --name goofy-cdn-cluster
+eksctl delete cluster --name hetic-groupe5
 ```
 
 ### 4. Coûts AWS à Surveiller
@@ -292,88 +298,6 @@ kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/v1.12.
 
 # Redémarrer les pods CNI
 kubectl delete pods -n kube-system -l k8s-app=aws-node
-```
-
-#### Problèmes de Permissions
-
-Vérifier que le rôle IAM a les bonnes politiques :
-
-- AmazonEKSClusterPolicy
-- AmazonEKSServicePolicy
-- AmazonEKSVPCResourceController
-- AmazonEKS_CNI_Policy
-
-## 🖥 Déploiement Local avec Docker Desktop
-
-### Prérequis
-
-- Docker Desktop installé
-- Kubernetes activé dans Docker Desktop (avec kubeadm)
-- kubectl installé (`brew install kubectl`)
-
-### 1. Configuration de Kubernetes dans Docker Desktop
-
-1. Ouvrir Docker Desktop
-2. Aller dans Settings > Kubernetes
-3. Sélectionner "Enable Kubernetes"
-4. Choisir "kubeadm" comme méthode de provisionnement
-5. Cliquer sur "Apply & Restart"
-
-### 2. Construction de l'Image
-
-```bash
-# Construire l'image localement
-docker build -t goofy-cdn:local -f docker/cdn/Dockerfile .
-```
-
-### 3. Déploiement sur Kubernetes Local
-
-1. **Vérifier que kubectl utilise le bon contexte** :
-
-```bash
-# Voir les contextes disponibles
-kubectl config get-contexts
-
-# Passer au contexte Docker Desktop si nécessaire
-kubectl config use-context docker-desktop
-```
-
-2. **Déployer l'application** :
-
-```bash
-# Appliquer les configurations
-kubectl apply -f k8s/cdn-deployment.yaml
-kubectl apply -f k8s/cdn-service.yaml
-
-# Vérifier le déploiement
-kubectl get pods
-kubectl get services
-```
-
-### 4. Accès à l'Application
-
-L'application est accessible via les endpoints suivants :
-
-- **URL Principale** : `http://localhost:80`
-- **Métriques** : `http://localhost:80/metrics`
-- **Health Check** : `http://localhost:80/health`
-- **Readiness** : `http://localhost:80/ready`
-
-### 5. Commandes Utiles
-
-```bash
-# Voir les logs de l'application
-kubectl logs -l app=goofy-cdn
-
-# Voir les détails du pod
-kubectl describe pod -l app=goofy-cdn
-
-# Redémarrer le déploiement (après modification du code)
-kubectl delete pod -l app=goofy-cdn
-
-# Supprimer le déploiement
-kubectl delete -f k8s/cdn-deployment.yaml
-kubectl delete -f k8s/cdn-service.yaml
 ```
 
 ### 6. Troubleshooting
